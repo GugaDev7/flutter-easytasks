@@ -87,6 +87,16 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: AppTheme.primaryColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(15))),
       ),
+      drawer: Drawer(
+        backgroundColor: AppTheme.primaryColor,
+        child: ListView(
+          children: [Text("Minhas Listas"),
+            ListTile(leading: Icon(Icons.arrow_right), title: Text("Lorem"), onTap: () {}),
+            ListTile(leading: Icon(Icons.arrow_right), title: Text("Lorem"), onTap: () {}),
+            ListTile(leading: Icon(Icons.arrow_right), title: Text("Lorem"), onTap: () {}),
+          ],
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openModal,
         backgroundColor: AppTheme.primaryColor,

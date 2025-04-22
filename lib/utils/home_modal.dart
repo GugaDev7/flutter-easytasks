@@ -65,7 +65,7 @@ class ExerciceModal extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 if (_nameCtrl.text.isNotEmpty) {
-                  addTask(_nameCtrl.text); // Chama o callback
+                  addTask(_nameCtrl.text);
                   Navigator.pop(context);
                 }
               },
