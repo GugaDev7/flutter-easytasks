@@ -1,6 +1,6 @@
 {
-    "name": "flutter_easytasks",
-    "short_name": "flutter_easytasks",
+    "name": "Easy Tasks",
+    "short_name": "Easy Tasks",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

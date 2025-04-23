@@ -1,148 +1,387 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_easytasks/utils/home_modal.dart';
 import 'package:flutter_easytasks/utils/theme.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../services/task_service.dart';
+import '../widgets/task_list_tile.dart';
+import '../widgets/confirmation_dialog.dart';
+import '../models/task.dart';
 
+/// Tela principal do aplicativo com todas as funcionalidades
 class HomeScreen extends StatefulWidget {
-  final String name;
+  final String name; // Nome do usuário (pode ser usado futuramente)
 
-  const HomeScreen({super.key, required this.name});
+  HomeScreen({super.key, required this.name});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<Task> _tasks = [];
+  final TaskService _taskService = TaskService(); // Instância do serviço
+  late List<String> _taskLists; // Nomes das listas ("Trabalho", "Casa", etc.)
+  String? _selectedList; // Lista atualmente selecionada
+  final Map<String, List<Task>> _activeTasks = {}; // Tarefas não concluídas
+  final Map<String, List<Task>> _completedTasks = {}; // Tarefas concluídas
 
+  // ================ CICLO DE VIDA ================
   @override
   void initState() {
     super.initState();
-    _loadTasks();
+    _initializeData(); // Carrega dados ao iniciar
   }
 
-  Future<void> _loadTasks() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> taskStrings = prefs.getStringList('tasks') ?? [];
-    setState(() {
-      _tasks = taskStrings.map((task) => Task(title: task)).toList();
-    });
+  /// Inicializa dados necessários
+  Future<void> _initializeData() async {
+    await _loadTaskLists(); // Carrega listas
+    if (_selectedList != null) await _loadTasks(_selectedList!); // Carrega tarefas
   }
 
-  Future<void> _addTask(String task) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _tasks.add(Task(title: task));
-    });
-    await prefs.setStringList('tasks', _tasks.map((task) => task.title).toList());
-  }
-
-  Future<void> _removeTask(int index) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _tasks.removeAt(index);
-    });
-    await prefs.setStringList('tasks', _tasks.map((task) => task.title).toList());
-  }
-
-  void _toggleTask(Task task) {
-    setState(() {
-      task.isCompleted = !task.isCompleted;
-      if (task.isCompleted) {
-        _tasks.remove(task);
-        _tasks.add(task);
-      }
-    });
-  }
-
-  Future<void> _confirmDelete(int index) async {
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Apagar Tarefa'),
-            content: Text('Você realmente deseja apagar esta tarefa?'),
-            actions: [
-              TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text('Não')),
-              TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text('Sim')),
-            ],
-          ),
-    );
-
-    if (confirm == true) {
-      _removeTask(index);
+  // ================ OPERAÇÕES DE DADOS ================
+  /// Carrega todas as listas salvas
+  Future<void> _loadTaskLists() async {
+    try {
+      final lists = await _taskService.loadTaskLists();
+      setState(() {
+        _taskLists = lists;
+        // Seleciona primeira lista se existir
+        _selectedList = _taskLists.isNotEmpty ? _taskLists[0] : null;
+      });
+    } catch (e) {
+      _showSnackBar('Erro ao carregar listas: $e'); // Feedback visual
     }
   }
 
-  void _openModal() {
-    showHomeModal(context, _addTask);
+  /// Carrega tarefas de uma lista específica
+  Future<void> _loadTasks(String listName) async {
+    try {
+      final tasks = await _taskService.loadTasks(listName);
+      setState(() {
+        _activeTasks[listName] = tasks['active']!; // Atribui tarefas ativas
+        _completedTasks[listName] = tasks['completed']!; // Atribui concluídas
+        _sortTasks(_activeTasks[listName]!); // Ordena por prioridade
+      });
+    } catch (e) {
+      _showSnackBar('Erro ao carregar tarefas: $e');
+    }
   }
 
+  /// Salva os nomes das listas
+  Future<void> _saveTaskLists() async {
+    try {
+      await _taskService.saveTaskLists(_taskLists);
+    } catch (e) {
+      _showSnackBar('Erro ao salvar listas: $e');
+    }
+  }
+
+  /// Salva todas as tarefas da lista atual
+  Future<void> _saveTasks(String listName) async {
+    try {
+      // Combina tarefas ativas e concluídas
+      final allTasks = [...?_activeTasks[listName], ...?_completedTasks[listName]];
+      await _taskService.saveTasks(listName, allTasks);
+    } catch (e) {
+      _showSnackBar('Erro ao salvar tarefas: $e');
+    }
+  }
+
+  // ================ LÓGICA DE NEGÓCIO ================
+  /// Adiciona nova tarefa à lista atual
+  Future<void> _addTask(String title, String priority) async {
+    if (_selectedList == null) return; // Valida lista selecionada
+
+    setState(() {
+      _activeTasks[_selectedList!]!.add(Task(title: title, priority: priority));
+      _sortTasks(_activeTasks[_selectedList!]!); // Reordena
+    });
+    await _saveTasks(_selectedList!); // Persiste
+  }
+
+  /// Remove uma tarefa específica
+  Future<void> _removeTask(Task task) async {
+    setState(() {
+      // Remove de ambas as listas (ativa/concluída)
+      _activeTasks[_selectedList!]?.remove(task);
+      _completedTasks[_selectedList!]?.remove(task);
+    });
+    await _saveTasks(_selectedList!);
+  }
+
+  /// Alterna status de conclusão da tarefa
+  void _toggleTask(Task task) {
+    setState(() {
+      task.isCompleted = !task.isCompleted; // Inverte status
+      if (task.isCompleted) {
+        // Move para concluídas
+        _activeTasks[_selectedList!]!.remove(task);
+        _completedTasks[_selectedList!]!.add(task);
+      } else {
+        // Move para ativas
+        _completedTasks[_selectedList!]!.remove(task);
+        _activeTasks[_selectedList!]!.add(task);
+        _sortTasks(_activeTasks[_selectedList!]!); // Reordena
+      }
+    });
+    _saveTasks(_selectedList!);
+  }
+
+  /// Ordena tarefas por prioridade (Alta > Média > Baixa)
+  void _sortTasks(List<Task> tasks) {
+    tasks.sort((a, b) => _priorityValue(b.priority) - _priorityValue(a.priority));
+  }
+
+  /// Retorna valor numérico para prioridades
+  int _priorityValue(String priority) {
+    return switch (priority) {
+      'Alta' => 3,
+      'Média' => 2,
+      _ => 1, // Baixa
+    };
+  }
+
+  // ================ INTERAÇÕES/DIÁLOGOS ================
+  /// Solicita confirmação para excluir tarefa
+  Future<void> _confirmDelete(Task task) async {
+    final confirm = await ConfirmationDialog.show(
+      context: context,
+      title: 'Apagar Tarefa',
+      content: 'Deseja realmente apagar esta tarefa?',
+      confirmText: 'Apagar',
+    );
+
+    if (confirm == true) await _removeTask(task);
+  }
+
+  /// Diálogo para criar nova lista
+  Future<void> _addTaskList() async {
+    final newListName = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        String listName = '';
+        return AlertDialog(
+          title: const Text('Nova Lista'),
+          content: TextField(
+            onChanged: (value) => listName = value,
+            decoration: const InputDecoration(hintText: "Nome da lista", border: OutlineInputBorder()),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(context, listName), child: const Text('Criar')),
+          ],
+        );
+      },
+    );
+
+    if (newListName != null && newListName.isNotEmpty) {
+      setState(() {
+        _taskLists.add(newListName);
+        _activeTasks[newListName] = []; // Inicializa lista vazia
+        _completedTasks[newListName] = [];
+        _selectedList = newListName; // Seleciona nova lista
+      });
+      await _saveTaskLists();
+      await _saveTasks(newListName);
+    }
+  }
+
+  /// Confirma exclusão de lista
+  Future<void> _confirmDeleteList(String listName) async {
+    final confirm = await ConfirmationDialog.show(
+      context: context,
+      title: 'Apagar Lista',
+      content: 'Deseja apagar a lista "$listName"?',
+      confirmText: 'Apagar',
+    );
+
+    if (confirm == true) {
+      setState(() {
+        _taskLists.remove(listName);
+        _activeTasks.remove(listName);
+        _completedTasks.remove(listName);
+        // Seleciona nova lista ou define como null
+        _selectedList = _taskLists.isNotEmpty ? _taskLists[0] : null;
+      });
+      await _saveTaskLists();
+      if (_selectedList != null) await _saveTasks(_selectedList!);
+    }
+  }
+
+  /// Seleciona lista pelo menu
+  void _selectTaskList(String listName) {
+    setState(() => _selectedList = listName);
+    _loadTasks(listName); // Carrega tarefas da nova lista
+    Navigator.pop(context); // Fecha o drawer
+  }
+
+  /// Exibe mensagem temporária na parte inferior
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.red, content: Text(message)));
+  }
+
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // ================ CONSTRUÇÃO DA UI ================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
-        title: Text("Lista de Tarefas"),
+        title: Text(_selectedList ?? 'Minhas Tarefas', style: TextStyle(color: Colors.white, fontSize: 35)),
         centerTitle: true,
         backgroundColor: AppTheme.primaryColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(15))),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(15))),
       ),
-      drawer: Drawer(
-        backgroundColor: AppTheme.primaryColor,
-        child: ListView(
-          children: [Text("Minhas Listas"),
-            ListTile(leading: Icon(Icons.arrow_right), title: Text("Lorem"), onTap: () {}),
-            ListTile(leading: Icon(Icons.arrow_right), title: Text("Lorem"), onTap: () {}),
-            ListTile(leading: Icon(Icons.arrow_right), title: Text("Lorem"), onTap: () {}),
-          ],
-        ),
-      ),
+      drawer: _buildDrawer(),
+      body: _buildBody(),
       floatingActionButton: FloatingActionButton(
-        onPressed: _openModal,
+        onPressed: _handleFABPress,
         backgroundColor: AppTheme.primaryColor,
-        child: Icon(Icons.add),
-      ),
-      body: Container(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: _tasks.length,
-                itemBuilder: (context, index) {
-                  return Container(
-                    margin: const EdgeInsets.symmetric(vertical: 5.0),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12.0)),
-                    child: ListTile(
-                      title: Text(
-                        _tasks[index].title,
-                        style: TextStyle(
-                          decoration: _tasks[index].isCompleted ? TextDecoration.lineThrough : null,
-                          color: _tasks[index].isCompleted ? Colors.grey : Colors.black,
-                        ),
-                      ),
-                      trailing: Checkbox(
-                        value: _tasks[index].isCompleted,
-                        onChanged: (bool? value) {
-                          _toggleTask(_tasks[index]);
-                        },
-                      ),
-                      onLongPress: () => _confirmDelete(index),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
-}
 
-class Task {
-  String title;
-  bool isCompleted;
+  /// Constrói o menu lateral (Drawer)
+  Widget _buildDrawer() {
+    return Drawer(
+      backgroundColor: AppTheme.backgroudColor,
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          SizedBox(
+            height: 100, // Altura ajustada
+            child: DrawerHeader(
+              decoration: BoxDecoration(color: AppTheme.primaryColor),
+              padding: const EdgeInsets.all(20),
+              margin: EdgeInsets.zero,
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Text(
+                  'Listas de Tarefas',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(color: const Color.fromARGB(87, 0, 0, 0), offset: const Offset(1, 1), blurRadius: 2),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Lista de listas existentes
+          ..._taskLists.map(
+            (listName) => ListTile(
+              title: Text(listName),
+              selected: listName == _selectedList, // Destaca selecionada
+              onTap: () => _selectTaskList(listName),
+              onLongPress: () => _confirmDeleteList(listName), // Exclui lista
+            ),
+          ),
+          const Divider(),
+          // Botão para nova lista
+          ListTile(leading: const Icon(Icons.add), title: const Text('Criar Nova Lista'), onTap: _addTaskList),
+        ],
+      ),
+    );
+  }
 
-  Task({required this.title, this.isCompleted = false});
+  /// Constrói o corpo principal da tela
+  Widget _buildBody() {
+    return Container(
+      padding: const EdgeInsets.all(8.0),
+      child:
+          _selectedList == null
+              ? _buildEmptyState() // Tela vazia
+              : _buildTaskLists(), // Lista de tarefas
+    );
+  }
+
+  /// Tela quando nenhuma lista está selecionada
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text('Nenhuma lista selecionada', style: TextStyle(fontSize: 18)),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+            child: const Text('Selecionar Lista'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Lista de tarefas dividida em seções
+  Widget _buildTaskLists() {
+    return ListView(
+      children: [
+        _buildTaskSection('Tarefas Ativas', _activeTasks[_selectedList] ?? []),
+        _buildTaskSection('Tarefas Concluídas', _completedTasks[_selectedList] ?? []),
+      ],
+    );
+  }
+
+  /// Seção de tarefas com título
+  Widget _buildTaskSection(String title, List<Task> tasks) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+        ),
+        // Lista de tarefas usando o widget personalizado
+        ...tasks.map((task) => TaskListTile(task: task, onToggle: _toggleTask, onDelete: _confirmDelete)),
+      ],
+    );
+  }
+
+  /// Manipula clique no botão de adicionar
+  void _handleFABPress() {
+    if (_selectedList == null) {
+      _showSnackBar('Crie uma lista primeiro!');
+    } else {
+      // Diálogo para nova tarefa
+      showDialog(
+        context: context,
+        builder: (context) {
+          String title = '';
+          String priority = 'Baixa';
+          return AlertDialog(
+            title: const Text('Nova Tarefa'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  onChanged: (value) => title = value,
+                  decoration: const InputDecoration(labelText: 'Título', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  value: priority,
+                  items: ['Alta', 'Média', 'Baixa'].map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+                  onChanged: (value) => priority = value!,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+              TextButton(
+                onPressed: () {
+                  if (title.isNotEmpty) {
+                    _addTask(title, priority);
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('Adicionar'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
 }

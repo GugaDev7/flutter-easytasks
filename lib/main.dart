@@ -9,10 +9,6 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Lista de Tarefas',
-      theme: AppTheme.themeData,
-      home: HomeScreen(name: "Minha Tarefa"), // Passar um nome aqui
-    );
+    return MaterialApp(title: 'Lista de Tarefas', theme: AppTheme.themeData, home: HomeScreen(name: ""));
   }
 }
