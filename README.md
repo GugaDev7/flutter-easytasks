@@ -1,16 +1,31 @@
-# flutter_easytasks
+# 📱 EasyTasks - Gerenciador de Tarefas Intuitivo
 
-Aplicativo de Tarefas.
+![Flutter Version](https://img.shields.io/badge/flutter-3.19.5-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 
-## Getting Started
+**Organize sua vida de forma simples e eficiente!** EasyTasks é um aplicativo de gerenciamento de tarefas com foco em usabilidade e produtividade.
 
-This project is a starting point for a Flutter application.
+<p align="center">
+  <img src="screenshots/main.png" width="200" alt="Tela Principal">
+  <img src="screenshots/dark_mode.png" width="200" alt="Modo Escuro">
+  <img src="screenshots/edit_task.png" width="200" alt="Editar Tarefa">
+</p>
 
-A few resources to get you started if this is your first Flutter project:
+## ✨ Funcionalidades Principais
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- ✅ **Listas Organizáveis** - Crie listas personalizadas (Trabalho, Casa, etc)
+- 🚨 **Sistema de Prioridades** - Alta, Média, Baixa e Sem Prioridade
+- ✔️ **Status de Conclusão** - Marque tarefas como ativas/concluídas
+- 🎨 **Temas Personalizáveis** - Modo claro/escuro automático
+- 📱 **Offline First** - Funciona sem internet com armazenamento local seguro
+- ✏️ **Edição Fácil** - Toque prolongado para editar/remover
+- 📤 **Backup Simples** - Exportação/importação de dados
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🛠️ Tecnologias Utilizadas
+
+- **Flutter 3.19** - Framework multiplataforma
+- **Dart 3.3** - Linguagem de programação
+- **SharedPreferences** - Armazenamento local
+- **Provider** - Gerenciamento de estado
+- **Material Design 3** - Design system moderno
