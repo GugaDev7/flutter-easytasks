@@ -6,8 +6,15 @@ class TaskListTile extends StatelessWidget {
   final Task task; // Tarefa a ser exibida
   final Function(Task) onToggle; // Callback para alternar status
   final Function(Task) onDelete; // Callback para exclusão
+  final VoidCallback? onTap; // Callback para Editar
 
-  const TaskListTile({super.key, required this.task, required this.onToggle, required this.onDelete});
+  const TaskListTile({
+    super.key,
+    required this.task,
+    required this.onToggle,
+    required this.onDelete,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +46,7 @@ class TaskListTile extends StatelessWidget {
           onChanged: (_) => onToggle(task), // Chama callback ao alterar
         ),
         onLongPress: () => onDelete(task), // Exclui com pressão longa
+        onTap: onTap,
       ),
     );
   }

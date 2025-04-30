@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easytasks/utils/theme.dart';
+import 'package:flutter_easytasks/widgets/confirmation_dialog.dart';
 import '../services/task_service.dart';
 import '../widgets/task_list_tile.dart';
 import '../widgets/confirmation_dialog.dart';
@@ -174,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (_taskLists.contains(newListName)) {
       Navigator.pop(context);
-      _showSnackBar("Já existe uma tarefa com esse nome!");
+      _showSnackBar("Já existe uma lista com esse nome!");
       return;
     }
 
@@ -212,6 +213,137 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _editListNameDialog(String currentListName) async {
+    String newName = currentListName;
+    final controller = TextEditingController(text: currentListName);
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Renomear Lista'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            onChanged: (value) => newName = value,
+            decoration: const InputDecoration(labelText: 'Novo nome', border: OutlineInputBorder()),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+            TextButton(
+              onPressed: () {
+                if (newName.isEmpty) {
+                  _showSnackBar("O nome não pode ficar vazio.");
+                  return;
+                }
+                if (newName == currentListName) {
+                  Navigator.pop(context, false);
+                  return;
+                }
+                if (_taskLists.contains(newName)) {
+                  _showSnackBar("Já existe uma lista com este nome.");
+                  return;
+                }
+                Navigator.pop(context, true);
+              },
+              child: const Text('Salvar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      setState(() {
+        // Atualiza todas as referências
+        final index = _taskLists.indexOf(currentListName);
+        _taskLists[index] = newName;
+
+        // Atualiza as tarefas
+        if (_activeTasks.containsKey(currentListName)) {
+          _activeTasks[newName] = _activeTasks.remove(currentListName)!;
+        }
+        if (_completedTasks.containsKey(currentListName)) {
+          _completedTasks[newName] = _completedTasks.remove(currentListName)!;
+        }
+
+        // Atualiza lista selecionada se necessário
+        if (_selectedList == currentListName) {
+          _selectedList = newName;
+        }
+      });
+
+      await _saveTaskLists();
+      await _saveTasks(newName);
+    }
+
+    controller.dispose();
+  }
+
+  Future<void> _editTaskDialog(Task task) async {
+    final titleController = TextEditingController(text: task.title);
+    String editedPriority = task.priority;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Editar Tarefa'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Título')),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                value: editedPriority,
+                items:
+                    const [
+                      'Alta',
+                      'Média',
+                      'Baixa',
+                      'Sem Prioridade',
+                    ].map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    editedPriority = value;
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+            TextButton(
+              onPressed: () {
+                final editedTitle = titleController.text.trim();
+                if (editedTitle.isNotEmpty) {
+                  Navigator.pop(context, true);
+                }
+              },
+              child: const Text('Salvar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      final editedTitle = titleController.text.trim();
+
+      // Cria uma nova tarefa com os valores editados
+      final updatedTask = task.copyWith(title: editedTitle, priority: editedPriority);
+
+      // Atualiza a lista de tarefas
+      setState(() {
+        _activeTasks[_selectedList!] =
+            _activeTasks[_selectedList!]!.map((t) => t.id == task.id ? updatedTask : t).toList();
+        _sortTasks(_activeTasks[_selectedList!]!);
+      });
+
+      _saveTasks(_selectedList!);
+    }
+  }
+
   /// Seleciona lista pelo menu
   void _selectTaskList(String listName) {
     setState(() => _selectedList = listName);
@@ -233,16 +365,8 @@ class _HomeScreenState extends State<HomeScreen> {
       key: _scaffoldKey,
       appBar: AppBar(
         iconTheme: IconThemeData(color: Colors.white),
-        title: FittedBox(
-          fit: BoxFit.scaleDown, // Reduz o texto para caber
-          child: Text(
-            _selectedList ?? 'Minhas Tarefas',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 33, // Tamanho máximo (será reduzido se necessário)
-            ),
-          ),
-        ),
+        title: Text(_selectedList ?? 'Minhas Tarefas', style: const TextStyle(color: Colors.white, fontSize: 33)),
+
         centerTitle: true,
         backgroundColor: AppTheme.primaryColor,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(15))),
@@ -268,20 +392,13 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 100, // Altura ajustada
             child: DrawerHeader(
               decoration: BoxDecoration(color: AppTheme.primaryColor),
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(0),
               margin: EdgeInsets.zero,
               child: Align(
-                alignment: Alignment.bottomLeft,
+                alignment: Alignment.center,
                 child: Text(
-                  'Listas de Tarefas',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    shadows: [
-                      Shadow(color: const Color.fromARGB(87, 0, 0, 0), offset: const Offset(1, 1), blurRadius: 2),
-                    ],
-                  ),
+                  'Minhas Listas',
+                  style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -289,13 +406,18 @@ class _HomeScreenState extends State<HomeScreen> {
           // Lista de listas existentes
           ..._taskLists.map(
             (listName) => ListTile(
+              trailing: IconButton(
+                onPressed: () {
+                  _editListNameDialog(listName); // Passa o nome da lista atual
+                },
+                icon: const Icon(Icons.edit_outlined),
+              ),
               title: Text(listName),
               selected: listName == _selectedList, // Destaca selecionada
               onTap: () => _selectTaskList(listName),
               onLongPress: () => _confirmDeleteList(listName), // Exclui lista
             ),
           ),
-          const Divider(),
           // Botão para nova lista
           ListTile(leading: const Icon(Icons.add), title: const Text('Criar Nova Lista'), onTap: _addTaskList),
         ],
@@ -354,7 +476,14 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
         ),
         // Lista de tarefas usando o widget personalizado
-        ...tasks.map((task) => TaskListTile(task: task, onToggle: _toggleTask, onDelete: _confirmDelete)),
+        ...tasks.map(
+          (task) => TaskListTile(
+            task: task,
+            onToggle: _toggleTask,
+            onDelete: _confirmDelete,
+            onTap: () => _editTaskDialog(task),
+          ),
+        ),
       ],
     );
   }
@@ -397,6 +526,12 @@ class _HomeScreenState extends State<HomeScreen> {
               TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
               TextButton(
                 onPressed: () {
+                  if (title.isEmpty) {
+                    Navigator.pop(context);
+                    _showSnackBar("A Tarefa precisa de um nome!");
+                    return;
+                  }
+
                   if (title.isNotEmpty) {
                     _addTask(title, priority);
                     Navigator.pop(context);

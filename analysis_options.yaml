@@ -9,6 +9,7 @@
 # packages, and plugins designed to encourage good coding practices.
 analyzer:
   errors:
+    duplicate_import: ignore
     library_private_types_in_public_api: ignore
     no_leading_underscores_for_local_identifiers: ignore
     prefer_const_constructors_in_immutables: ignore
