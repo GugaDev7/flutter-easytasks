@@ -241,6 +241,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   return;
                 }
                 if (_taskLists.contains(newName)) {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
                   _showSnackBar("Já existe uma lista com este nome.");
                   return;
                 }
