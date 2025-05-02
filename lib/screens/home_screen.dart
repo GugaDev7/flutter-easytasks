@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_easytasks/components/dropdownbutton_decoration.dart';
+import 'package:flutter_easytasks/components/textformfield_decoration.dart';
 import 'package:flutter_easytasks/utils/theme.dart';
 import 'package:flutter_easytasks/widgets/confirmation_dialog.dart';
 import '../services/task_service.dart';
@@ -6,11 +8,8 @@ import '../widgets/task_list_tile.dart';
 import '../widgets/confirmation_dialog.dart';
 import '../models/task.dart';
 
-/// Tela principal do aplicativo com todas as funcionalidades
 class HomeScreen extends StatefulWidget {
-  final String name; // Nome do usuário (pode ser usado futuramente)
-
-  HomeScreen({super.key, required this.name});
+  HomeScreen({super.key});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -155,29 +154,51 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Diálogo para criar nova lista
   Future<void> _addTaskList() async {
+    final _formKey = GlobalKey<FormState>();
+    String listName = '';
+
     final newListName = await showDialog<String>(
       context: context,
       builder: (context) {
-        String listName = '';
-        return AlertDialog(
-          title: const Text('Nova Lista'),
-          content: TextField(
-            onChanged: (value) => listName = value,
-            decoration: const InputDecoration(hintText: "Nome da lista", border: OutlineInputBorder()),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-            TextButton(onPressed: () => Navigator.pop(context, listName), child: const Text('Criar')),
-          ],
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Nova Lista'),
+              content: Form(
+                key: _formKey, // ①
+                child: TextFormField(
+                  onChanged: (value) => listName = value,
+                  decoration: getInputDecoration("Insira o nome da Lista."),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return "Este campo não pode estar vazio.";
+                    }
+                    if (_taskLists.contains(value.trim())) {
+                      return "Essa Lista já existe!";
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+                TextButton(
+                  onPressed: () {
+                    // ② dispara todos os validators do Form
+                    if (_formKey.currentState!.validate()) {
+                      // se válido, retorna o valor
+                      Navigator.pop(context, listName.trim());
+                    }
+                    // se inválido, o TextFormField já exibe o erro automaticamente
+                  },
+                  child: const Text('Criar'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
-
-    if (_taskLists.contains(newListName)) {
-      Navigator.pop(context);
-      _showSnackBar("Já existe uma lista com esse nome!");
-      return;
-    }
 
     if (newListName != null && newListName.isNotEmpty) {
       setState(() {
@@ -214,39 +235,40 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _editListNameDialog(String currentListName) async {
+    final _formKey = GlobalKey<FormState>();
     String newName = currentListName;
-    final controller = TextEditingController(text: currentListName);
+    final _controller = TextEditingController(text: currentListName);
 
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text('Renomear Lista'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            onChanged: (value) => newName = value,
-            decoration: const InputDecoration(labelText: 'Novo nome', border: OutlineInputBorder()),
+          content: Form(
+            key: _formKey,
+            child: TextFormField(
+              controller: _controller,
+              autofocus: true,
+              onChanged: (value) => newName = value,
+              decoration: getInputDecoration("Insira o nome da Lista."),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return "Este campo não pode estar vazio.";
+                }
+                if (_taskLists.contains(value.trim())) {
+                  return "Essa Lista já existe!";
+                }
+                return null;
+              },
+            ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
             TextButton(
               onPressed: () {
-                if (newName.isEmpty) {
-                  _showSnackBar("O nome não pode ficar vazio.");
-                  return;
+                if (_formKey.currentState!.validate()) {
+                  Navigator.pop(context, true);
                 }
-                if (newName == currentListName) {
-                  Navigator.pop(context, false);
-                  return;
-                }
-                if (_taskLists.contains(newName)) {
-                  Navigator.pop(context);
-                  Navigator.pop(context);
-                  _showSnackBar("Já existe uma lista com este nome.");
-                  return;
-                }
-                Navigator.pop(context, true);
               },
               child: const Text('Salvar'),
             ),
@@ -278,12 +300,10 @@ class _HomeScreenState extends State<HomeScreen> {
       await _saveTaskLists();
       await _saveTasks(newName);
     }
-
-    controller.dispose();
   }
 
   Future<void> _editTaskDialog(Task task) async {
-    final titleController = TextEditingController(text: task.title);
+    final _controller = TextEditingController(text: task.title);
     String editedPriority = task.priority;
 
     final result = await showDialog<bool>(
@@ -294,9 +314,10 @@ class _HomeScreenState extends State<HomeScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Título')),
+              TextFormField(controller: _controller, decoration: getInputDecoration('Título')),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
+                decoration: getInputDecoration(""),
                 value: editedPriority,
                 items:
                     const [
@@ -317,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen> {
             TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
             TextButton(
               onPressed: () {
-                final editedTitle = titleController.text.trim();
+                final editedTitle = _controller.text.trim();
                 if (editedTitle.isNotEmpty) {
                   Navigator.pop(context, true);
                 }
@@ -330,7 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (result == true) {
-      final editedTitle = titleController.text.trim();
+      final editedTitle = _controller.text.trim();
 
       // Cria uma nova tarefa com os valores editados
       final updatedTask = task.copyWith(title: editedTitle, priority: editedPriority);
@@ -376,7 +397,7 @@ class _HomeScreenState extends State<HomeScreen> {
       drawer: _buildDrawer(),
       body: _buildBody(),
       floatingActionButton: FloatingActionButton(
-        onPressed: _handleFABPress,
+        onPressed: _addTaskButton,
         backgroundColor: AppTheme.primaryColor,
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -491,7 +512,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Manipula clique no botão de adicionar
-  void _handleFABPress() {
+  void _addTaskButton() {
     if (_selectedList == null) {
       _showSnackBar('Crie uma lista primeiro!');
     } else {
@@ -506,12 +527,11 @@ class _HomeScreenState extends State<HomeScreen> {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(
-                  onChanged: (value) => title = value,
-                  decoration: const InputDecoration(labelText: 'Título', border: OutlineInputBorder()),
-                ),
+                TextFormField(onChanged: (value) => title = value, decoration: getInputDecoration('Título')),
+
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
+                  decoration: getDropdownDecoration(""),
                   value: priority,
                   items:
                       [

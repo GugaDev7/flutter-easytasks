@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Lista de Tarefas',
       theme: AppTheme.themeData,
-      home: HomeScreen(name: ""),
+      home: HomeScreen(),
     );
   }
 }

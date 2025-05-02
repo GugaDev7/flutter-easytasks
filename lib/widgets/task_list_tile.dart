@@ -40,7 +40,7 @@ class TaskListTile extends StatelessWidget {
                     : Colors.black,
           ),
         ),
-        subtitle: Text('Prioridade: ${task.priority}'), // Exibe prioridade
+        // subtitle: Text('${task.priority} prioridade', style: TextStyle(fontSize: 10),),
         trailing: Checkbox(
           value: task.isCompleted,
           onChanged: (_) => onToggle(task), // Chama callback ao alterar
