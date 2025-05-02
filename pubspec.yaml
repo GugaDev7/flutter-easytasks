@@ -10,6 +10,7 @@ environment:
 dependencies:
   shared_preferences: ^2.5.3
   flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.6
   flutter:
     sdk: flutter
 
@@ -32,6 +33,17 @@ flutter_launcher_icons:
     # background_color: "#hexcode"
     # theme_color: "#hexcode"
 
+flutter_native_splash:
+  color: "#8AB3CF"
+  image: "assets/icons/icon_nobg.png"
+  fullscreen: true
+  android: true
+  ios: true
+  web: true
+  android_12:
+    color: "#8AB3CF"
+    icon_background_color: "#8AB3CF"
+    image: "assets/icons/icon_nobg.png"
 
 flutter:
 
@@ -39,7 +51,7 @@ flutter:
 
   assets:
     - assets/icons/
-    # - assets/images/
+    - assets/images/
 
   fonts:
     - family: PoetsenOne-Regular
