@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easytasks/components/dropdownbutton_decoration.dart';
 import 'package:flutter_easytasks/components/textformfield_decoration.dart';
+import 'package:flutter_easytasks/screens/home/home_body.dart';
+import 'package:flutter_easytasks/screens/home/home_drawer.dart';
 import 'package:flutter_easytasks/utils/theme.dart';
 import 'package:flutter_easytasks/widgets/confirmation_dialog.dart';
-import '../services/task_service.dart';
-import '../widgets/task_list_tile.dart';
-import '../widgets/confirmation_dialog.dart';
-import '../models/task.dart';
+import '../../services/task_service.dart';
+import '../../widgets/confirmation_dialog.dart';
+import '../../models/task.dart';
 
 class HomeScreen extends StatefulWidget {
   HomeScreen({super.key});
@@ -16,55 +17,48 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final TaskService _taskService = TaskService(); // Instância do serviço
-  List<String> _taskLists = []; // Nomes das listas ("Trabalho", "Casa", etc.)
-  String? _selectedList; // Lista atualmente selecionada
-  final Map<String, List<Task>> _activeTasks = {}; // Tarefas não concluídas
-  final Map<String, List<Task>> _completedTasks = {}; // Tarefas concluídas
+  final TaskService _taskService = TaskService();
+  List<String> _taskLists = [];
+  String? _selectedList;
+  final Map<String, List<Task>> _activeTasks = {};
+  final Map<String, List<Task>> _completedTasks = {};
 
-  // ================ CICLO DE VIDA ================
   @override
   void initState() {
     super.initState();
-    _initializeData(); // Carrega dados ao iniciar
+    _initializeData();
   }
 
-  /// Inicializa dados necessários
   Future<void> _initializeData() async {
-    await _loadTaskLists(); // Carrega listas
-    if (_selectedList != null) await _loadTasks(_selectedList!); // Carrega tarefas
+    await _loadTaskLists();
+    if (_selectedList != null) await _loadTasks(_selectedList!);
   }
 
-  // ================ OPERAÇÕES DE DADOS ================
-  /// Carrega todas as listas salvas
   Future<void> _loadTaskLists() async {
     try {
       final lists = await _taskService.loadTaskLists();
       setState(() {
         _taskLists = lists;
-        // Seleciona primeira lista se existir
         _selectedList = _taskLists.isNotEmpty ? _taskLists[0] : null;
       });
     } catch (e) {
-      _showSnackBar('Erro ao carregar listas: $e'); // Feedback visual
+      _showSnackBar('Erro ao carregar listas: $e');
     }
   }
 
-  /// Carrega tarefas de uma lista específica
   Future<void> _loadTasks(String listName) async {
     try {
       final tasks = await _taskService.loadTasks(listName);
       setState(() {
-        _activeTasks[listName] = tasks['active']!; // Atribui tarefas ativas
-        _completedTasks[listName] = tasks['completed']!; // Atribui concluídas
-        _sortTasks(_activeTasks[listName]!); // Ordena por prioridade
+        _activeTasks[listName] = tasks['active']!;
+        _completedTasks[listName] = tasks['completed']!;
+        _sortTasks(_activeTasks[listName]!);
       });
     } catch (e) {
       _showSnackBar('Erro ao carregar tarefas: $e');
     }
   }
 
-  /// Salva os nomes das listas
   Future<void> _saveTaskLists() async {
     try {
       await _taskService.saveTaskLists(_taskLists);
@@ -73,10 +67,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Salva todas as tarefas da lista atual
   Future<void> _saveTasks(String listName) async {
     try {
-      // Combina tarefas ativas e concluídas
       final allTasks = [...?_activeTasks[listName], ...?_completedTasks[listName]];
       await _taskService.saveTasks(listName, allTasks);
     } catch (e) {
@@ -84,52 +76,43 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ================ LÓGICA DE NEGÓCIO ================
-  /// Adiciona nova tarefa à lista atual
   Future<void> _addTask(String title, String priority) async {
-    if (_selectedList == null) return; // Valida lista selecionada
+    if (_selectedList == null) return;
 
     setState(() {
       _activeTasks[_selectedList!]!.add(Task(title: title, priority: priority));
-      _sortTasks(_activeTasks[_selectedList!]!); // Reordena
+      _sortTasks(_activeTasks[_selectedList!]!);
     });
-    await _saveTasks(_selectedList!); // Persiste
+    await _saveTasks(_selectedList!);
   }
 
-  /// Remove uma tarefa específica
   Future<void> _removeTask(Task task) async {
     setState(() {
-      // Remove de ambas as listas (ativa/concluída)
       _activeTasks[_selectedList!]?.remove(task);
       _completedTasks[_selectedList!]?.remove(task);
     });
     await _saveTasks(_selectedList!);
   }
 
-  /// Alterna status de conclusão da tarefa
   void _toggleTask(Task task) {
     setState(() {
-      task.isCompleted = !task.isCompleted; // Inverte status
+      task.isCompleted = !task.isCompleted;
       if (task.isCompleted) {
-        // Move para concluídas
         _activeTasks[_selectedList!]!.remove(task);
         _completedTasks[_selectedList!]!.add(task);
       } else {
-        // Move para ativas
         _completedTasks[_selectedList!]!.remove(task);
         _activeTasks[_selectedList!]!.add(task);
-        _sortTasks(_activeTasks[_selectedList!]!); // Reordena
+        _sortTasks(_activeTasks[_selectedList!]!);
       }
     });
     _saveTasks(_selectedList!);
   }
 
-  /// Ordena tarefas por prioridade (Alta > Média > Baixa)
   void _sortTasks(List<Task> tasks) {
     tasks.sort((a, b) => _priorityValue(b.priority) - _priorityValue(a.priority));
   }
 
-  /// Retorna valor numérico para prioridades
   int _priorityValue(String priority) {
     return switch (priority) {
       'Alta' => 4,
@@ -139,8 +122,6 @@ class _HomeScreenState extends State<HomeScreen> {
     };
   }
 
-  // ================ INTERAÇÕES/DIÁLOGOS ================
-  /// Solicita confirmação para excluir tarefa
   Future<void> _confirmDelete(Task task) async {
     final confirm = await ConfirmationDialog.show(
       context: context,
@@ -152,7 +133,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (confirm == true) await _removeTask(task);
   }
 
-  /// Diálogo para criar nova lista
   Future<void> _addTaskList() async {
     final _formKey = GlobalKey<FormState>();
     String listName = '';
@@ -184,12 +164,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
                 TextButton(
                   onPressed: () {
-                    // ② dispara todos os validators do Form
                     if (_formKey.currentState!.validate()) {
-                      // se válido, retorna o valor
                       Navigator.pop(context, listName.trim());
                     }
-                    // se inválido, o TextFormField já exibe o erro automaticamente
                   },
                   child: const Text('Criar'),
                 ),
@@ -203,16 +180,15 @@ class _HomeScreenState extends State<HomeScreen> {
     if (newListName != null && newListName.isNotEmpty) {
       setState(() {
         _taskLists.add(newListName);
-        _activeTasks[newListName] = []; // Inicializa lista vazia
+        _activeTasks[newListName] = [];
         _completedTasks[newListName] = [];
-        _selectedList = newListName; // Seleciona nova lista
+        _selectedList = newListName;
       });
       await _saveTaskLists();
       await _saveTasks(newListName);
     }
   }
 
-  /// Confirma exclusão de lista
   Future<void> _confirmDeleteList(String listName) async {
     final confirm = await ConfirmationDialog.show(
       context: context,
@@ -226,7 +202,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _taskLists.remove(listName);
         _activeTasks.remove(listName);
         _completedTasks.remove(listName);
-        // Seleciona nova lista ou define como null
         _selectedList = _taskLists.isNotEmpty ? _taskLists[0] : null;
       });
       await _saveTaskLists();
@@ -279,11 +254,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (result == true) {
       setState(() {
-        // Atualiza todas as referências
         final index = _taskLists.indexOf(currentListName);
         _taskLists[index] = newName;
 
-        // Atualiza as tarefas
         if (_activeTasks.containsKey(currentListName)) {
           _activeTasks[newName] = _activeTasks.remove(currentListName)!;
         }
@@ -291,7 +264,6 @@ class _HomeScreenState extends State<HomeScreen> {
           _completedTasks[newName] = _completedTasks.remove(currentListName)!;
         }
 
-        // Atualiza lista selecionada se necessário
         if (_selectedList == currentListName) {
           _selectedList = newName;
         }
@@ -353,10 +325,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (result == true) {
       final editedTitle = _controller.text.trim();
 
-      // Cria uma nova tarefa com os valores editados
       final updatedTask = task.copyWith(title: editedTitle, priority: editedPriority);
 
-      // Atualiza a lista de tarefas
       setState(() {
         _activeTasks[_selectedList!] =
             _activeTasks[_selectedList!]!.map((t) => t.id == task.id ? updatedTask : t).toList();
@@ -367,21 +337,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Seleciona lista pelo menu
   void _selectTaskList(String listName) {
     setState(() => _selectedList = listName);
-    _loadTasks(listName); // Carrega tarefas da nova lista
-    Navigator.pop(context); // Fecha o drawer
+    _loadTasks(listName);
+    Navigator.pop(context);
   }
 
-  /// Exibe mensagem temporária na parte inferior
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.red, content: Text(message)));
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // ================ CONSTRUÇÃO DA UI ================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -394,8 +361,22 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: AppTheme.primaryColor,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(15))),
       ),
-      drawer: _buildDrawer(),
-      body: _buildBody(),
+      drawer: HomeDrawer(
+        taskLists: _taskLists,
+        selectedList: _selectedList,
+        onSelectList: _selectTaskList,
+        onAddTaskList: _addTaskList,
+        onEditListName: _editListNameDialog,
+        onDeleteList: _confirmDeleteList,
+      ),
+      body: HomeBody(
+        selectedList: _selectedList,
+        activeTasks: _activeTasks[_selectedList] ?? [],
+        completedTasks: _completedTasks[_selectedList] ?? [],
+        onToggleTask: _toggleTask,
+        onDeleteTask: _confirmDelete,
+        onEditTask: _editTaskDialog,
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addTaskButton,
         backgroundColor: AppTheme.primaryColor,
@@ -404,114 +385,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Constrói o menu lateral (Drawer)
-  Widget _buildDrawer() {
-    return Drawer(
-      backgroundColor: AppTheme.backgroudColor,
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          SizedBox(
-            height: 100, // Altura ajustada
-            child: DrawerHeader(
-              decoration: BoxDecoration(color: AppTheme.primaryColor),
-              padding: const EdgeInsets.all(0),
-              margin: EdgeInsets.zero,
-              child: Align(
-                alignment: Alignment.center,
-                child: Text(
-                  'Minhas Listas',
-                  style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ),
-          // Lista de listas existentes
-          ..._taskLists.map(
-            (listName) => ListTile(
-              trailing: IconButton(
-                onPressed: () {
-                  _editListNameDialog(listName); // Passa o nome da lista atual
-                },
-                icon: const Icon(Icons.edit_outlined),
-              ),
-              title: Text(listName),
-              selected: listName == _selectedList, // Destaca selecionada
-              onTap: () => _selectTaskList(listName),
-              onLongPress: () => _confirmDeleteList(listName), // Exclui lista
-            ),
-          ),
-          // Botão para nova lista
-          ListTile(leading: const Icon(Icons.add), title: const Text('Criar Nova Lista'), onTap: _addTaskList),
-        ],
-      ),
-    );
-  }
-
-  /// Constrói o corpo principal da tela
-  Widget _buildBody() {
-    return Container(
-      padding: const EdgeInsets.all(8.0),
-      child:
-          _selectedList == null
-              ? _buildEmptyState() // Tela vazia
-              : _buildTaskLists(), // Lista de tarefas
-    );
-  }
-
-  /// Tela quando nenhuma lista está selecionada
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('Nenhuma lista selecionada', style: TextStyle(fontSize: 18)),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-            child: const Text('Selecionar Lista'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Lista de tarefas dividida em seções
-  Widget _buildTaskLists() {
-    final active = _activeTasks[_selectedList] ?? [];
-    final completed = _completedTasks[_selectedList] ?? [];
-
-    return ListView(
-      children: [
-        if (active.isNotEmpty) _buildTaskSection('Tarefas Ativas', active),
-        if (completed.isNotEmpty) _buildTaskSection('Tarefas Concluídas', completed),
-      ],
-    );
-  }
-
-  /// Seção de tarefas com título
-  Widget _buildTaskSection(String title, List<Task> tasks) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
-        ),
-        // Lista de tarefas usando o widget personalizado
-        ...tasks.map(
-          (task) => TaskListTile(
-            task: task,
-            onToggle: _toggleTask,
-            onDelete: _confirmDelete,
-            onTap: () => _editTaskDialog(task),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Manipula clique no botão de adicionar
   void _addTaskButton() {
     if (_selectedList == null) {
       _showSnackBar('Crie uma lista primeiro!');

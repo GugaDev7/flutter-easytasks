@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 
-/// Widget personalizado para exibir uma tarefa em formato de ListTile
 class TaskListTile extends StatelessWidget {
-  final Task task; // Tarefa a ser exibida
-  final Function(Task) onToggle; // Callback para alternar status
-  final Function(Task) onDelete; // Callback para exclusão
-  final VoidCallback? onTap; // Callback para Editar
+  final Task task;
+  final Function(Task) onToggle;
+  final Function(Task) onDelete;
+  final VoidCallback? onTap;
 
   const TaskListTile({
     super.key,
@@ -20,32 +19,17 @@ class TaskListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 5.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.0), // Borda arredondada
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12.0)),
       child: ListTile(
         title: Text(
           task.title,
           style: TextStyle(
-            decoration:
-                task.isCompleted
-                    ? TextDecoration
-                        .lineThrough // Risca texto se concluída
-                    : null,
-            color:
-                task.isCompleted
-                    ? Colors
-                        .grey // Texto cinza para concluídas
-                    : Colors.black,
+            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+            color: task.isCompleted ? Colors.grey : Colors.black,
           ),
         ),
-        // subtitle: Text('${task.priority} prioridade', style: TextStyle(fontSize: 10),),
-        trailing: Checkbox(
-          value: task.isCompleted,
-          onChanged: (_) => onToggle(task), // Chama callback ao alterar
-        ),
-        onLongPress: () => onDelete(task), // Exclui com pressão longa
+        trailing: Checkbox(value: task.isCompleted, onChanged: (_) => onToggle(task)),
+        onLongPress: () => onDelete(task),
         onTap: onTap,
       ),
     );
