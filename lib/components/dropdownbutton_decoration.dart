@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_easytasks/utils/theme.dart';
+import 'package:flutter_easytasks/utils/apptheme.dart';
 
+/// Decoração do DropdownButtonFormField.
 InputDecoration getDropdownDecoration(String label) {
   return InputDecoration(
     fillColor: Colors.white,
@@ -9,7 +10,7 @@ InputDecoration getDropdownDecoration(String label) {
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(color: Colors.black, width: 2),
+      borderSide: BorderSide(color: Colors.black, width: 1),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),

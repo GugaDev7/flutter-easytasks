@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 
+/// Widget que representa um item de lista de tarefas.
 class TaskListTile extends StatelessWidget {
+  /// Tarefa a ser exibida no item da lista.
   final Task task;
+
+  /// Função chamada ao alternar o estado da tarefa (ativa/concluída).
   final Function(Task) onToggle;
+
+  /// Função chamada ao deletar a tarefa.
   final Function(Task) onDelete;
+
+  /// Função chamada ao tocar na tarefa, permitindo ações adicionais (ex: abrir detalhes).
   final VoidCallback? onTap;
 
+  /// Construtor do TaskListTile.
   const TaskListTile({
     super.key,
     required this.task,
@@ -15,6 +24,7 @@ class TaskListTile extends StatelessWidget {
     required this.onTap,
   });
 
+  /// Constrói o widget TaskListTile.
   @override
   Widget build(BuildContext context) {
     return Container(

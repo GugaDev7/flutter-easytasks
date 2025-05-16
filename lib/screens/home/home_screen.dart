@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_easytasks/components/dropdownbutton_decoration.dart';
-import 'package:flutter_easytasks/components/textformfield_decoration.dart';
+import 'package:flutter_easytasks/controllers/task_manager.dart';
 import 'package:flutter_easytasks/screens/home/home_body.dart';
 import 'package:flutter_easytasks/screens/home/home_drawer.dart';
-import 'package:flutter_easytasks/utils/theme.dart';
-import 'package:flutter_easytasks/widgets/confirmation_dialog.dart';
+import 'package:flutter_easytasks/utils/snackbar_utils.dart';
+import 'package:flutter_easytasks/utils/apptheme.dart';
+import 'package:flutter_easytasks/widgets/app_dialog.dart';
 import '../../services/task_service.dart';
-import '../../widgets/confirmation_dialog.dart';
+import '../../widgets/app_dialog.dart';
 import '../../models/task.dart';
 
+/// Tela principal do aplicativo, responsável por gerenciar listas e tarefas.
 class HomeScreen extends StatefulWidget {
   HomeScreen({super.key});
 
@@ -16,24 +17,37 @@ class HomeScreen extends StatefulWidget {
   _HomeScreenState createState() => _HomeScreenState();
 }
 
+/// Estado da tela principal, com lógica de manipulação das listas e tarefas.
 class _HomeScreenState extends State<HomeScreen> {
+  /// Serviço para persistência das tarefas.
   final TaskService _taskService = TaskService();
+
+  /// Lista de nomes das listas de tarefas.
   List<String> _taskLists = [];
+
+  /// Nome da lista atualmente selecionada.
   String? _selectedList;
+
+  /// Mapa de tarefas ativas por lista.
   final Map<String, List<Task>> _activeTasks = {};
+
+  /// Mapa de tarefas concluídas por lista.
   final Map<String, List<Task>> _completedTasks = {};
 
+  /// Inicializa o estado da tela principal.
   @override
   void initState() {
     super.initState();
     _initializeData();
   }
 
+  /// Inicializa os dados, carregando listas e tarefas.
   Future<void> _initializeData() async {
     await _loadTaskLists();
     if (_selectedList != null) await _loadTasks(_selectedList!);
   }
 
+  /// Carrega as listas de tarefas do armazenamento.
   Future<void> _loadTaskLists() async {
     try {
       final lists = await _taskService.loadTaskLists();
@@ -42,138 +56,90 @@ class _HomeScreenState extends State<HomeScreen> {
         _selectedList = _taskLists.isNotEmpty ? _taskLists[0] : null;
       });
     } catch (e) {
-      _showSnackBar('Erro ao carregar listas: $e');
+      SnackbarUtils.showError(context, 'Erro ao carregar listas: $e');
     }
   }
 
+  ///Alterna o status de conclusão de uma tarefa.
+  void _toggleTask(Task task) {
+    setState(() {
+      TaskManager.toggleTask(
+        task: task,
+        activeTasks: _activeTasks[_selectedList!]!,
+        completedTasks: _completedTasks[_selectedList!]!,
+      );
+    });
+    _saveTasks(_selectedList!);
+  }
+
+  /// Carrega as tarefas de uma lista específica.
   Future<void> _loadTasks(String listName) async {
     try {
       final tasks = await _taskService.loadTasks(listName);
       setState(() {
         _activeTasks[listName] = tasks['active']!;
         _completedTasks[listName] = tasks['completed']!;
-        _sortTasks(_activeTasks[listName]!);
+        TaskManager.sortTasks(_activeTasks[listName]!);
       });
     } catch (e) {
-      _showSnackBar('Erro ao carregar tarefas: $e');
+      SnackbarUtils.showError(context, 'Erro ao carregar tarefas: $e');
     }
   }
 
+  /// Salva as listas de tarefas no armazenamento.
   Future<void> _saveTaskLists() async {
     try {
       await _taskService.saveTaskLists(_taskLists);
     } catch (e) {
-      _showSnackBar('Erro ao salvar listas: $e');
+      SnackbarUtils.showError(context, 'Erro ao salvar listas: $e');
     }
   }
 
+  /// Salva as tarefas de uma lista específica no armazenamento.
   Future<void> _saveTasks(String listName) async {
     try {
       final allTasks = [...?_activeTasks[listName], ...?_completedTasks[listName]];
       await _taskService.saveTasks(listName, allTasks);
     } catch (e) {
-      _showSnackBar('Erro ao salvar tarefas: $e');
+      SnackbarUtils.showError(context, 'Erro ao salvar tarefas: $e');
     }
   }
 
-  Future<void> _addTask(String title, String priority) async {
-    if (_selectedList == null) return;
-
-    setState(() {
-      _activeTasks[_selectedList!]!.add(Task(title: title, priority: priority));
-      _sortTasks(_activeTasks[_selectedList!]!);
-    });
-    await _saveTasks(_selectedList!);
-  }
-
-  Future<void> _removeTask(Task task) async {
-    setState(() {
-      _activeTasks[_selectedList!]?.remove(task);
-      _completedTasks[_selectedList!]?.remove(task);
-    });
-    await _saveTasks(_selectedList!);
-  }
-
-  void _toggleTask(Task task) {
-    setState(() {
-      task.isCompleted = !task.isCompleted;
-      if (task.isCompleted) {
-        _activeTasks[_selectedList!]!.remove(task);
-        _completedTasks[_selectedList!]!.add(task);
-      } else {
-        _completedTasks[_selectedList!]!.remove(task);
-        _activeTasks[_selectedList!]!.add(task);
-        _sortTasks(_activeTasks[_selectedList!]!);
-      }
-    });
-    _saveTasks(_selectedList!);
-  }
-
-  void _sortTasks(List<Task> tasks) {
-    tasks.sort((a, b) => _priorityValue(b.priority) - _priorityValue(a.priority));
-  }
-
-  int _priorityValue(String priority) {
-    return switch (priority) {
-      'Alta' => 4,
-      'Média' => 3,
-      'Baixa' => 2,
-      _ => 1,
-    };
-  }
-
+  /// Exibe um diálogo de confirmação para apagar uma tarefa.
   Future<void> _confirmDelete(Task task) async {
-    final confirm = await ConfirmationDialog.show(
+    final confirm = await AppDialog.showConfirmation(
       context: context,
       title: 'Apagar Tarefa',
       content: 'Deseja realmente apagar esta tarefa?',
-      confirmText: 'Apagar',
     );
 
-    if (confirm == true) await _removeTask(task);
+    if (confirm == true) {
+      setState(() {
+        if (!task.isCompleted) {
+          TaskManager.removeTask(_activeTasks[_selectedList!]!, task);
+        } else {
+          TaskManager.removeTask(_completedTasks[_selectedList!]!, task);
+        }
+      });
+      await _saveTasks(_selectedList!);
+    }
   }
 
+  /// Exibe um diálogo para adicionar uma nova lista de tarefas.
   Future<void> _addTaskList() async {
-    final _formKey = GlobalKey<FormState>();
-    String listName = '';
-
-    final newListName = await showDialog<String>(
+    final newListName = await AppDialog.showEditText(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Nova Lista'),
-              content: Form(
-                key: _formKey, // ①
-                child: TextFormField(
-                  onChanged: (value) => listName = value,
-                  decoration: getInputDecoration("Insira o nome da Lista."),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return "Este campo não pode estar vazio.";
-                    }
-                    if (_taskLists.contains(value.trim())) {
-                      return "Essa Lista já existe!";
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-                TextButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      Navigator.pop(context, listName.trim());
-                    }
-                  },
-                  child: const Text('Criar'),
-                ),
-              ],
-            );
-          },
-        );
+      title: 'Nova Lista',
+      labelText: 'Insira o nome da Lista.',
+      confirmText: 'Criar',
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return "Este campo não pode estar vazio.";
+        }
+        if (_taskLists.contains(value.trim())) {
+          return "Essa Lista já existe!";
+        }
+        return null;
       },
     );
 
@@ -189,8 +155,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Exibe um diálogo de confirmação para apagar uma lista de tarefas.
   Future<void> _confirmDeleteList(String listName) async {
-    final confirm = await ConfirmationDialog.show(
+    final confirm = await AppDialog.showConfirmation(
       context: context,
       title: 'Apagar Lista',
       content: 'Deseja apagar a lista "$listName"?',
@@ -209,50 +176,26 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Exibe um diálogo para editar o nome de uma lista de tarefas.
   Future<void> _editListNameDialog(String currentListName) async {
-    final _formKey = GlobalKey<FormState>();
-    String newName = currentListName;
-    final _controller = TextEditingController(text: currentListName);
-
-    final result = await showDialog<bool>(
+    final newName = await AppDialog.showEditText(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Renomear Lista'),
-          content: Form(
-            key: _formKey,
-            child: TextFormField(
-              controller: _controller,
-              autofocus: true,
-              onChanged: (value) => newName = value,
-              decoration: getInputDecoration("Insira o nome da Lista."),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return "Este campo não pode estar vazio.";
-                }
-                if (_taskLists.contains(value.trim())) {
-                  return "Essa Lista já existe!";
-                }
-                return null;
-              },
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-            TextButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  Navigator.pop(context, true);
-                }
-              },
-              child: const Text('Salvar'),
-            ),
-          ],
-        );
+      title: 'Renomear Lista',
+      initialValue: currentListName,
+      labelText: 'Insira o nome da Lista.',
+      confirmText: 'Salvar',
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return "Este campo não pode estar vazio.";
+        }
+        if (_taskLists.contains(value.trim())) {
+          return "Essa Lista já existe!";
+        }
+        return null;
       },
     );
 
-    if (result == true) {
+    if (newName != null && newName != currentListName) {
       setState(() {
         final index = _taskLists.indexOf(currentListName);
         _taskLists[index] = newName;
@@ -274,93 +217,71 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Exibe um diálogo para editar uma tarefa.
   Future<void> _editTaskDialog(Task task) async {
-    final _controller = TextEditingController(text: task.title);
-    String editedPriority = task.priority;
-
-    final result = await showDialog<bool>(
+    final result = await AppDialog.showTaskDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Editar Tarefa'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(controller: _controller, decoration: getInputDecoration('Título')),
-              const SizedBox(height: 10),
-              DropdownButtonFormField<String>(
-                decoration: getInputDecoration(""),
-                value: editedPriority,
-                items:
-                    const [
-                      'Alta',
-                      'Média',
-                      'Baixa',
-                      'Sem Prioridade',
-                    ].map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    editedPriority = value;
-                  }
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-            TextButton(
-              onPressed: () {
-                final editedTitle = _controller.text.trim();
-                if (editedTitle.isNotEmpty) {
-                  Navigator.pop(context, true);
-                }
-              },
-              child: const Text('Salvar'),
-            ),
-          ],
-        );
-      },
+      title: 'Editar Tarefa',
+      initialTitle: task.title,
+      initialPriority: task.priority,
+      confirmText: 'Salvar',
     );
-
-    if (result == true) {
-      final editedTitle = _controller.text.trim();
-
-      final updatedTask = task.copyWith(title: editedTitle, priority: editedPriority);
-
+    if (result != null && result['title']!.isNotEmpty) {
+      final updatedTask = task.copyWith(title: result['title'], priority: result['priority']);
       setState(() {
-        _activeTasks[_selectedList!] =
-            _activeTasks[_selectedList!]!.map((t) => t.id == task.id ? updatedTask : t).toList();
-        _sortTasks(_activeTasks[_selectedList!]!);
+        TaskManager.updateTask(_activeTasks[_selectedList!]!, updatedTask);
       });
-
-      _saveTasks(_selectedList!);
+      await _saveTasks(_selectedList!);
     }
   }
 
+  /// Exibe um diálogo para adicionar uma nova tarefa.
+  Future<void> _addTaskButton() async {
+    if (_selectedList == null) {
+      SnackbarUtils.showError(context, 'Crie uma lista primeiro!');
+    } else {
+      final result = await AppDialog.showTaskDialog(context: context, title: 'Nova Tarefa', confirmText: 'Adicionar');
+      if (result != null && result['title']!.isNotEmpty) {
+        setState(() {
+          TaskManager.addTask(
+            _activeTasks[_selectedList!]!,
+            Task(title: result['title']!, priority: result['priority']!),
+          );
+        });
+        await _saveTasks(_selectedList!);
+      } else if (result != null && result['title']!.isEmpty) {
+        SnackbarUtils.showError(context, "A Tarefa precisa de um nome!");
+      }
+    }
+  }
+
+  /// Exibe um diálogo para selecionar uma lista de tarefas.
   void _selectTaskList(String listName) {
     setState(() => _selectedList = listName);
     _loadTasks(listName);
     Navigator.pop(context);
   }
 
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.red, content: Text(message)));
-  }
-
+  /// Chave global para o Scaffold, usada para exibir o Snackbar.
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  ///Construção da tela principal.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
+
+      /// AppBar com título e ícone de menu.
       appBar: AppBar(
         iconTheme: IconThemeData(color: Colors.white),
-        title: Text(_selectedList ?? 'Minhas Tarefas', style: const TextStyle(color: Colors.white, fontSize: 33)),
+        title: Text(_selectedList ?? 'Easy Tasks', style: const TextStyle(color: Colors.white, fontSize: 33)),
 
         centerTitle: true,
         backgroundColor: AppTheme.primaryColor,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(15))),
       ),
+
+      /// Drawer com listas de tarefas.
       drawer: HomeDrawer(
         taskLists: _taskLists,
         selectedList: _selectedList,
@@ -369,6 +290,8 @@ class _HomeScreenState extends State<HomeScreen> {
         onEditListName: _editListNameDialog,
         onDeleteList: _confirmDeleteList,
       ),
+
+      /// Corpo da tela com tarefas ativas e concluídas.
       body: HomeBody(
         selectedList: _selectedList,
         activeTasks: _activeTasks[_selectedList] ?? [],
@@ -377,67 +300,13 @@ class _HomeScreenState extends State<HomeScreen> {
         onDeleteTask: _confirmDelete,
         onEditTask: _editTaskDialog,
       ),
+
+      /// Botão flutuante para adicionar nova tarefa.
       floatingActionButton: FloatingActionButton(
         onPressed: _addTaskButton,
         backgroundColor: AppTheme.primaryColor,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
-  }
-
-  void _addTaskButton() {
-    if (_selectedList == null) {
-      _showSnackBar('Crie uma lista primeiro!');
-    } else {
-      // Diálogo para nova tarefa
-      showDialog(
-        context: context,
-        builder: (context) {
-          String title = '';
-          String priority = 'Sem Prioridade';
-          return AlertDialog(
-            title: const Text('Nova Tarefa'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(onChanged: (value) => title = value, decoration: getInputDecoration('Título')),
-
-                const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  decoration: getDropdownDecoration(""),
-                  value: priority,
-                  items:
-                      [
-                        'Alta',
-                        'Média',
-                        'Baixa',
-                        'Sem Prioridade',
-                      ].map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
-                  onChanged: (value) => priority = value!,
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-              TextButton(
-                onPressed: () {
-                  if (title.isEmpty) {
-                    Navigator.pop(context);
-                    _showSnackBar("A Tarefa precisa de um nome!");
-                    return;
-                  }
-
-                  if (title.isNotEmpty) {
-                    _addTask(title, priority);
-                    Navigator.pop(context);
-                  }
-                },
-                child: const Text('Adicionar'),
-              ),
-            ],
-          );
-        },
-      );
-    }
   }
 }

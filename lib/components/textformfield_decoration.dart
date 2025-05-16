@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_easytasks/utils/theme.dart';
+import 'package:flutter_easytasks/utils/apptheme.dart';
 
-InputDecoration getInputDecoration(String label, {Icon? icon}) {
+/// Decoração do TextFormField.
+InputDecoration getTextfieldDecoration(String label, {Icon? icon}) {
   return InputDecoration(
     icon: icon,
     hintText: label,
@@ -11,7 +12,7 @@ InputDecoration getInputDecoration(String label, {Icon? icon}) {
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(color: Colors.black, width: 2),
+      borderSide: BorderSide(color: Colors.black, width: 1),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
