@@ -17,7 +17,7 @@ class AppDialog {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text(title),
+            title: Text(title, style: TextStyle(color: AppTheme.primaryColor)),
             content: Text(content),
             actions: [
               TextButton(
@@ -52,7 +52,7 @@ class AppDialog {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text(title),
+            title: Text(title, style: TextStyle(color: AppTheme.primaryColor)),
             content: Form(
               key: formKey,
               child: TextFormField(

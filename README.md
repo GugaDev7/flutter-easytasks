@@ -4,13 +4,8 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 
-**Organize sua vida de forma simples e eficiente!** EasyTasks é um aplicativo de gerenciamento de tarefas com foco em usabilidade e produtividade.
-
-<p align="center">
-  <img src="screenshots/main.png" width="200" alt="Tela Principal">
-  <img src="screenshots/dark_mode.png" width="200" alt="Modo Escuro">
-  <img src="screenshots/edit_task.png" width="200" alt="Editar Tarefa">
-</p>
+**Organize sua vida de forma simples e eficiente!** 
+EasyTasks é um aplicativo de gerenciamento de tarefas com foco em usabilidade e produtividade.
 
 ---
 
@@ -62,14 +57,21 @@ lib/
 
 ## 🖼️ Screenshots
 
-<p align="center"> <img src="screenshots/main.png" width="300" alt="Tela Principal"> <img src="screenshots/dark_mode.png" width="300" alt="Modo Escuro"> <img src="screenshots/edit_task.png" width="300" alt="Editar Tarefa"> </p>     
+<p align="center"> 
+<img src="screenshots/main1.png" width="300" alt="Tela Principal"> 
+<img src="screenshots/main2.png" width="300" alt="Tela Principal da Lista"> 
+<img src="screenshots/new_task.png" width="300" alt="Adicionar Tarefa"> 
+<img src="screenshots/edit_task.png" width="300" alt="Editar Tarefa"> 
+<img src="screenshots/delete_task.png" width="300" alt="Excluir Tarefa"> 
+<img src="screenshots/rename_task.png" width="300" alt="Renomear Tarefa"> 
+</p>     
 
 ---
 
 ## 📧 Contato
 **Autor:** Gustavo Rodrigues
-**Email:** seuemail@exemplo.com
-**LinkedIn:** Seu LinkedIn
+**Email:** gustavo.rodriguesrj@outlook.com
+**LinkedIn:** [Seu LinkedIn](https://www.linkedin.com/in/gustavo-rodrigues-167264361?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app)
 
 ---
 
