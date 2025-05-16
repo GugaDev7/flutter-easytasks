@@ -5,6 +5,7 @@
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 
 **Organize sua vida de forma simples e eficiente!** 
+
 EasyTasks é um aplicativo de gerenciamento de tarefas com foco em usabilidade e produtividade.
 
 ---
@@ -69,6 +70,7 @@ lib/
 ---
 
 ## 📧 Contato
+
 **Autor:** Gustavo Rodrigues
 **Email:** gustavo.rodriguesrj@outlook.com
 **LinkedIn:** [Meu Perfil](https://www.linkedin.com/in/gustavo-rodrigues-167264361?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app)
