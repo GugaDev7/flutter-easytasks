@@ -71,7 +71,7 @@ lib/
 ## 📧 Contato
 **Autor:** Gustavo Rodrigues
 **Email:** gustavo.rodriguesrj@outlook.com
-**LinkedIn:** [Seu LinkedIn](https://www.linkedin.com/in/gustavo-rodrigues-167264361?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app)
+**LinkedIn:** [Meu Perfil](https://www.linkedin.com/in/gustavo-rodrigues-167264361?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app)
 
 ---
 
