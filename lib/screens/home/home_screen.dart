@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_easytasks/controllers/task_manager.dart';
 import 'package:flutter_easytasks/screens/auth/auth_screen.dart';
 import 'package:flutter_easytasks/screens/home/home_body.dart';
@@ -8,7 +9,7 @@ import 'package:flutter_easytasks/utils/snackbar_utils.dart';
 import 'package:flutter_easytasks/utils/apptheme.dart';
 import 'package:flutter_easytasks/widgets/app_dialog.dart';
 import '../../services/task_service.dart';
-import '../../models/task.dart';
+import '../../models/task_model.dart';
 
 /// Tela principal do aplicativo, responsável por gerenciar listas e tarefas.
 class HomeScreen extends StatefulWidget {
@@ -30,10 +31,10 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _selectedList;
 
   /// Mapa de tarefas ativas por lista.
-  final Map<String, List<Task>> _activeTasks = {};
+  final Map<String, List<TaskModel>> _activeTasks = {};
 
   /// Mapa de tarefas concluídas por lista.
-  final Map<String, List<Task>> _completedTasks = {};
+  final Map<String, List<TaskModel>> _completedTasks = {};
 
   /// Modo de seleção múltipla.
   bool _selectionMode = false;
@@ -91,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Salva as tarefas de uma lista específica no serviço.
-  Future<void> _saveTasks(String listName) async {
+  Future<void> saveTasks(String listName) async {
     try {
       final allTasks = [...?_activeTasks[listName], ...?_completedTasks[listName]];
       await _taskService.saveTasks(listName, allTasks);
@@ -101,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Alterna o status de conclusão de uma tarefa.
-  void _toggleTask(Task task) {
+  void _toggleTask(TaskModel task) {
     setState(() {
       TaskManager.toggleTask(
         task: task,
@@ -109,11 +110,11 @@ class _HomeScreenState extends State<HomeScreen> {
         completedTasks: _completedTasks[_selectedList!]!,
       );
     });
-    _saveTasks(_selectedList!);
+    saveTasks(_selectedList!);
   }
 
   /// Exibe um diálogo de confirmação para apagar uma tarefa.
-  Future<void> _confirmDelete(Task task) async {
+  Future<void> _confirmDelete(TaskModel task) async {
     final confirm = await AppDialog.showConfirmation(
       context: context,
       title: 'Apagar Tarefa',
@@ -128,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
           TaskManager.removeTask(_completedTasks[_selectedList!]!, task);
         }
       });
-      await _saveTasks(_selectedList!);
+      await saveTasks(_selectedList!);
     }
   }
 
@@ -158,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _selectedList = newListName;
       });
       await _saveTaskLists();
-      await _saveTasks(newListName);
+      await saveTasks(newListName);
     }
   }
 
@@ -179,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _selectedList = _taskLists.isNotEmpty ? _taskLists[0] : null;
       });
       await _saveTaskLists();
-      if (_selectedList != null) await _saveTasks(_selectedList!);
+      if (_selectedList != null) await saveTasks(_selectedList!);
     }
   }
 
@@ -220,12 +221,12 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       await _saveTaskLists();
-      await _saveTasks(newName);
+      await saveTasks(newName);
     }
   }
 
   /// Exibe um diálogo para editar uma tarefa.
-  Future<void> _editTaskDialog(Task task) async {
+  Future<void> _editTaskDialog(TaskModel task) async {
     final result = await AppDialog.showTaskDialog(
       context: context,
       title: 'Editar Tarefa',
@@ -238,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         TaskManager.updateTask(_activeTasks[_selectedList!]!, updatedTask);
       });
-      await _saveTasks(_selectedList!);
+      await saveTasks(_selectedList!);
     }
   }
 
@@ -252,10 +253,10 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           TaskManager.addTask(
             _activeTasks[_selectedList!]!,
-            Task(title: result['title']!, priority: result['priority']!),
+            TaskModel(title: result['title']!, priority: result['priority']!),
           );
         });
-        await _saveTasks(_selectedList!);
+        await saveTasks(_selectedList!);
       } else if (result != null && result['title']!.isEmpty) {
         SnackbarUtils.showError(context, "A Tarefa precisa de um nome!");
       }
@@ -270,7 +271,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Manipula o toque em uma tarefa, alternando entre seleção e edição.
-  void _onTaskTap(Task task) {
+  void _onTaskTap(TaskModel task) {
     if (_selectionMode) {
       setState(() {
         if (_selectedTaskIds.contains(task.id)) {
@@ -286,7 +287,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Manipula o pressionamento longo em uma tarefa, ativando o modo de seleção.
-  void _onTaskLongPress(Task task) {
+  void _onTaskLongPress(TaskModel task) {
     setState(() {
       _selectionMode = true;
       _selectedTaskIds.add(task.id);
@@ -308,7 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _selectedTaskIds.clear();
         _selectionMode = false;
       });
-      await _saveTasks(_selectedList!);
+      await saveTasks(_selectedList!);
     }
   }
 
@@ -340,6 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
   ///Construção da tela principal.
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(systemNavigationBarColor: AppTheme.backgroundColor));
     return Scaffold(
       key: _scaffoldKey,
 

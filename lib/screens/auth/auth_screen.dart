@@ -33,8 +33,10 @@ class _AuthScreenState extends State<AuthScreen> {
   /// Controlador de texto para o campo de nome completo.
   final TextEditingController _nameController = TextEditingController();
 
+  /// Instância do serviço de autenticação.
   final AuthService _authService = AuthService();
 
+  /// Método que é chamado quando o botão de autenticação é pressionado.
   void authButton() {
     String name = _nameController.text;
     String password = _passwordController.text;

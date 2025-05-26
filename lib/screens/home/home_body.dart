@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easytasks/utils/apptheme.dart';
 import 'task_section.dart';
-import '../../models/task.dart';
+import '../../models/task_model.dart';
 
 //// Widget que representa o corpo da tela inicial, exibindo as tarefas ativas e concluídas.
 class HomeBody extends StatelessWidget {
@@ -9,19 +9,19 @@ class HomeBody extends StatelessWidget {
   final String? selectedList;
 
   /// Lista de tarefas ativas.
-  final List<Task> activeTasks;
+  final List<TaskModel> activeTasks;
 
   /// Lista de tarefas concluídas.
-  final List<Task> completedTasks;
+  final List<TaskModel> completedTasks;
 
   /// Função chamada quando uma tarefa é marcada como concluída ou não concluída.
-  final void Function(Task) onToggleTask;
+  final void Function(TaskModel) onToggleTask;
 
   /// Função chamada para deletar uma tarefa.
-  final void Function(Task) onDeleteTask;
+  final void Function(TaskModel) onDeleteTask;
 
   /// Função chamada para editar uma tarefa.
-  final void Function(Task) onEditTask;
+  final void Function(TaskModel) onEditTask;
 
   /// Indica se o modo de seleção está ativo.
   final bool selectionMode;
@@ -30,10 +30,10 @@ class HomeBody extends StatelessWidget {
   final Set<String> selectedTaskIds;
 
   /// Função chamada quando uma tarefa é tocada.
-  final Function(Task) onTaskTap;
+  final Function(TaskModel) onTaskTap;
 
   /// Função chamada quando uma tarefa é pressionada longamente.
-  final Function(Task) onTaskLongPress;
+  final Function(TaskModel) onTaskLongPress;
 
   /// Função chamada para deletar as tarefas selecionadas.
   final VoidCallback onDeleteSelected;

@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import '../models/task.dart';
+import '../models/task_model.dart';
 
 /// Widget que representa um item de tarefa na lista de tarefas.
 class TaskListTile extends StatelessWidget {
   /// Tarefa a ser exibida, contendo título e estado de conclusão.
-  final Task task;
+  final TaskModel task;
 
   /// Função chamada quando a tarefa é marcada como concluída ou não concluída.
-  final Function(Task) onToggle;
+  final Function(TaskModel) onToggle;
 
   /// Função chamada para deletar a tarefa.
-  final Function(Task) onDelete;
+  final Function(TaskModel) onDelete;
 
   /// Função chamada quando a tarefa é tocada.
   final VoidCallback? onTap;

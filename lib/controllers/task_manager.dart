@@ -1,9 +1,9 @@
-import '../models/task.dart';
+import '../models/task_model.dart';
 
 /// Classe para manipulação de tarefas.
 class TaskManager {
   /// Ordena as tarefas por prioridade.
-  static void sortTasks(List<Task> tasks) {
+  static void sortTasks(List<TaskModel> tasks) {
     tasks.sort((a, b) => _priorityValue(b.priority) - _priorityValue(a.priority));
   }
 
@@ -22,18 +22,18 @@ class TaskManager {
   }
 
   /// Adiciona uma tarefa à lista e ordena.
-  static void addTask(List<Task> tasks, Task task) {
+  static void addTask(List<TaskModel> tasks, TaskModel task) {
     tasks.add(task);
     sortTasks(tasks);
   }
 
   /// Remove uma tarefa da lista.
-  static void removeTask(List<Task> tasks, Task task) {
+  static void removeTask(List<TaskModel> tasks, TaskModel task) {
     tasks.remove(task);
   }
 
   /// Atualiza uma tarefa na lista e ordena.
-  static void updateTask(List<Task> tasks, Task updatedTask) {
+  static void updateTask(List<TaskModel> tasks, TaskModel updatedTask) {
     final index = tasks.indexWhere((t) => t.id == updatedTask.id);
     if (index != -1) {
       tasks[index] = updatedTask;
@@ -42,7 +42,11 @@ class TaskManager {
   }
 
   /// Alterna o status de conclusão de uma tarefa.
-  static void toggleTask({required Task task, required List<Task> activeTasks, required List<Task> completedTasks}) {
+  static void toggleTask({
+    required TaskModel task,
+    required List<TaskModel> activeTasks,
+    required List<TaskModel> completedTasks,
+  }) {
     task.isCompleted = !task.isCompleted;
     if (task.isCompleted) {
       activeTasks.remove(task);

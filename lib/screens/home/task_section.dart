@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/task.dart';
+import '../../models/task_model.dart';
 import '../../widgets/task_list_tile.dart';
 
 /// Widget que representa uma seção de tarefas, exibindo uma lista de tarefas ativas ou concluídas.
@@ -8,19 +8,19 @@ class TaskSection extends StatelessWidget {
   final String title;
 
   // Lista de tarefas a serem exibidas nesta seção.
-  final List<Task> tasks;
+  final List<TaskModel> tasks;
 
   // Funções de callback para manipulação de tarefas.
-  final void Function(Task) onToggle;
+  final void Function(TaskModel) onToggle;
 
   // Função para deletar uma tarefa.
-  final void Function(Task) onDelete;
+  final void Function(TaskModel) onDelete;
 
   // Função chamada quando uma tarefa é tocada.
-  final void Function(Task) onTaskTap;
+  final void Function(TaskModel) onTaskTap;
 
   // Função chamada quando uma tarefa é pressionada longamente.
-  final void Function(Task) onTaskLongPress;
+  final void Function(TaskModel) onTaskLongPress;
 
   // Indica se o modo de seleção está ativo.
   final bool selectionMode;
