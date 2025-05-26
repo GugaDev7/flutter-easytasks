@@ -15,6 +15,9 @@ class HomeDrawer extends StatelessWidget {
   /// Função chamada ao adicionar uma nova lista de tarefas.
   final VoidCallback onAddTaskList;
 
+  /// Função chamada ao sair do aplicativo.
+  final VoidCallback onExit;
+
   /// Função chamada ao editar o nome de uma lista de tarefas.
   final Function(String) onEditListName;
 
@@ -30,6 +33,7 @@ class HomeDrawer extends StatelessWidget {
     required this.onAddTaskList,
     required this.onEditListName,
     required this.onDeleteList,
+    required this.onExit,
   });
 
   /// Constrói o widget HomeDrawer.
@@ -71,8 +75,13 @@ class HomeDrawer extends StatelessWidget {
               .toList(),
           ListTile(
             leading: const Icon(Icons.add, color: AppTheme.primaryColor),
-            title: const Text('Criar Nova Lista', style: TextStyle(color: AppTheme.primaryColor)),
+            title: const Text("Nova Lista", style: TextStyle(color: AppTheme.primaryColor)),
             onTap: onAddTaskList,
+          ),
+          ListTile(
+            leading: const Icon(Icons.exit_to_app, color: AppTheme.primaryColor),
+            title: const Text("Logout", style: TextStyle(color: AppTheme.primaryColor)),
+            onTap: onExit,
           ),
         ],
       ),

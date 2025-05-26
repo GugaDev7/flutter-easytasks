@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easytasks/components/textformfield_decoration.dart';
 import 'package:flutter_easytasks/screens/home/home_screen.dart';
+import 'package:flutter_easytasks/services/auth_service.dart';
 import 'package:flutter_easytasks/utils/apptheme.dart';
 import 'package:flutter_easytasks/utils/snackbar_utils.dart';
 
@@ -32,34 +33,33 @@ class _AuthScreenState extends State<AuthScreen> {
   /// Controlador de texto para o campo de nome completo.
   final TextEditingController _nameController = TextEditingController();
 
-  //final AuthService _authService = AuthService();
+  final AuthService _authService = AuthService();
 
-  // clickButton1() {
-  //   String name = _nameController.text;
-  //   String password = _passwordController.text;
-  //   String email = _emailController.text;
+  void authButton() {
+    String name = _nameController.text;
+    String password = _passwordController.text;
+    String email = _emailController.text;
 
-  //   if (_formkey.currentState!.validate()) {
-  //     if (entry) {
-  //       print("Entrada Validada");
-  //       _authService.loginUser(email: email, password: password).then((String? erro) {
-  //         if (erro != null) {
-  //           SnackbarUtils.showError(context, erro);
-  //         }
-  //       });
-  //     } else {
-  //       print("Cadastro Validado");
-  //       print("${_emailController.text}, ${_passwordController.text}, ${_nameController.text}");
-  //       _authService.registerUser(name: name, password: password, email: email).then((String? erro) {
-  //         if (erro != null) {
-  //           SnackbarUtils.showError(context, erro);
-  //         }
-  //       });
-  //     }
-  //   } else {
-  //     print("Form inválido");
-  //   }
-  // }
+    if (_formkey.currentState!.validate()) {
+      if (entry) {
+        _authService.loginUser(email: email, password: password).then((String? erro) {
+          if (erro != null) {
+            SnackbarUtils.showError(context, erro);
+          } else {
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen(context)));
+          }
+        });
+      } else {
+        _authService.registerUser(name: name, password: password, email: email).then((String? erro) {
+          if (erro != null) {
+            SnackbarUtils.showError(context, erro);
+          } else {
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen(context)));
+          }
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,8 +158,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
                       onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen(context)));
-                        // clickButton1();
+                        authButton();
                       },
                       child: Text((entry) ? "Entrar" : "Cadastrar"),
                     ),

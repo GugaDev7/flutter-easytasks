@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_easytasks/controllers/task_manager.dart';
+import 'package:flutter_easytasks/screens/auth/auth_screen.dart';
 import 'package:flutter_easytasks/screens/home/home_body.dart';
 import 'package:flutter_easytasks/screens/home/home_drawer.dart';
+import 'package:flutter_easytasks/services/auth_service.dart';
 import 'package:flutter_easytasks/utils/snackbar_utils.dart';
 import 'package:flutter_easytasks/utils/apptheme.dart';
 import 'package:flutter_easytasks/widgets/app_dialog.dart';
@@ -328,19 +329,17 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  /// Método para sair do aplicativo, realizando logout do usuário.
+  void _exit() async {
+    await AuthService().logout();
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => AuthScreen()), (route) => false);
+    }
+  }
+
   ///Construção da tela principal.
   @override
   Widget build(BuildContext context) {
-    // Configura o tema do sistema e inicializa o MaterialApp.
-    SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        systemNavigationBarColor: AppTheme.backgroundColor,
-        systemNavigationBarIconBrightness: Brightness.dark,
-        statusBarColor: AppTheme.primaryColor,
-        statusBarIconBrightness: Brightness.light,
-      ),
-    );
-
     return Scaffold(
       key: _scaffoldKey,
 
@@ -370,6 +369,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onAddTaskList: _addTaskList,
         onEditListName: _editListNameDialog,
         onDeleteList: _confirmDeleteList,
+        onExit: _exit,
       ),
 
       body: HomeBody(
