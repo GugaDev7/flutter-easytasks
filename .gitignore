@@ -43,3 +43,35 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+
+# Para repositório Público
+
+# Diretórios e arquivos gerados
+build/
+.dart_tool/
+.packages
+.pub/
+.flutter-plugins
+.flutter-plugins-dependencies
+.melos_tool/
+.idea/
+.vscode/
+*.iml
+
+# Arquivos de configuração local
+.env
+*.env
+*.local
+*.secret
+*.key
+*.pem
+
+# Arquivos de credenciais
+google-services.json
+GoogleService-Info.plist
+firebase_options.dart
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'screens/home/home_screen.dart';
+import 'package:flutter_easytasks/screens/auth/auth_screen.dart';
+import 'package:flutter_easytasks/screens/home/home_screen.dart';
 import 'utils/apptheme.dart';
 
 /// Função principal que inicializa o aplicativo.
@@ -25,7 +26,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Lista de Tarefas',
       theme: AppTheme.themeData,
-      home: HomeScreen(),
+      home: HomeScreen(context),
     );
   }
 }

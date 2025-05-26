@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_easytasks/controllers/task_manager.dart';
 import 'package:flutter_easytasks/screens/home/home_body.dart';
 import 'package:flutter_easytasks/screens/home/home_drawer.dart';
@@ -6,12 +7,11 @@ import 'package:flutter_easytasks/utils/snackbar_utils.dart';
 import 'package:flutter_easytasks/utils/apptheme.dart';
 import 'package:flutter_easytasks/widgets/app_dialog.dart';
 import '../../services/task_service.dart';
-import '../../widgets/app_dialog.dart';
 import '../../models/task.dart';
 
 /// Tela principal do aplicativo, responsável por gerenciar listas e tarefas.
 class HomeScreen extends StatefulWidget {
-  HomeScreen({super.key});
+  HomeScreen(BuildContext context, {super.key});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -34,7 +34,13 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Mapa de tarefas concluídas por lista.
   final Map<String, List<Task>> _completedTasks = {};
 
-  /// Inicializa o estado da tela principal.
+  /// Modo de seleção múltipla.
+  bool _selectionMode = false;
+  Set<String> _selectedTaskIds = {};
+
+  /// Chave global para o Scaffold, usada para exibir o Snackbar.
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   void initState() {
     super.initState();
@@ -47,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_selectedList != null) await _loadTasks(_selectedList!);
   }
 
-  /// Carrega as listas de tarefas do armazenamento.
+  /// Carrega as listas de tarefas do serviço.
   Future<void> _loadTaskLists() async {
     try {
       final lists = await _taskService.loadTaskLists();
@@ -58,18 +64,6 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       SnackbarUtils.showError(context, 'Erro ao carregar listas: $e');
     }
-  }
-
-  ///Alterna o status de conclusão de uma tarefa.
-  void _toggleTask(Task task) {
-    setState(() {
-      TaskManager.toggleTask(
-        task: task,
-        activeTasks: _activeTasks[_selectedList!]!,
-        completedTasks: _completedTasks[_selectedList!]!,
-      );
-    });
-    _saveTasks(_selectedList!);
   }
 
   /// Carrega as tarefas de uma lista específica.
@@ -86,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Salva as listas de tarefas no armazenamento.
+  /// Salva as listas de tarefas no serviço.
   Future<void> _saveTaskLists() async {
     try {
       await _taskService.saveTaskLists(_taskLists);
@@ -95,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Salva as tarefas de uma lista específica no armazenamento.
+  /// Salva as tarefas de uma lista específica no serviço.
   Future<void> _saveTasks(String listName) async {
     try {
       final allTasks = [...?_activeTasks[listName], ...?_completedTasks[listName]];
@@ -103,6 +97,18 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       SnackbarUtils.showError(context, 'Erro ao salvar tarefas: $e');
     }
+  }
+
+  /// Alterna o status de conclusão de uma tarefa.
+  void _toggleTask(Task task) {
+    setState(() {
+      TaskManager.toggleTask(
+        task: task,
+        activeTasks: _activeTasks[_selectedList!]!,
+        completedTasks: _completedTasks[_selectedList!]!,
+      );
+    });
+    _saveTasks(_selectedList!);
   }
 
   /// Exibe um diálogo de confirmação para apagar uma tarefa.
@@ -255,33 +261,108 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Exibe um diálogo para selecionar uma lista de tarefas.
+  /// Seleciona uma lista de tarefas.
   void _selectTaskList(String listName) {
     setState(() => _selectedList = listName);
     _loadTasks(listName);
     Navigator.pop(context);
   }
 
-  /// Chave global para o Scaffold, usada para exibir o Snackbar.
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  /// Manipula o toque em uma tarefa, alternando entre seleção e edição.
+  void _onTaskTap(Task task) {
+    if (_selectionMode) {
+      setState(() {
+        if (_selectedTaskIds.contains(task.id)) {
+          _selectedTaskIds.remove(task.id);
+          if (_selectedTaskIds.isEmpty) _selectionMode = false;
+        } else {
+          _selectedTaskIds.add(task.id);
+        }
+      });
+    } else {
+      _editTaskDialog(task);
+    }
+  }
+
+  /// Manipula o pressionamento longo em uma tarefa, ativando o modo de seleção.
+  void _onTaskLongPress(Task task) {
+    setState(() {
+      _selectionMode = true;
+      _selectedTaskIds.add(task.id);
+    });
+  }
+
+  /// Deleta as tarefas selecionadas.
+  Future<void> _deleteSelectedTasks() async {
+    final confirm = await AppDialog.showConfirmation(
+      context: context,
+      title: 'Apagar Tarefas',
+      content: 'Deseja apagar as tarefas selecionadas?',
+      confirmText: 'Apagar',
+    );
+    if (confirm == true) {
+      setState(() {
+        _activeTasks[_selectedList!]?.removeWhere((t) => _selectedTaskIds.contains(t.id));
+        _completedTasks[_selectedList!]?.removeWhere((t) => _selectedTaskIds.contains(t.id));
+        _selectedTaskIds.clear();
+        _selectionMode = false;
+      });
+      await _saveTasks(_selectedList!);
+    }
+  }
+
+  /// Seleciona ou desseleciona todas as tarefas da lista atual.
+  void _selectAllTasks() {
+    setState(() {
+      final totalTasks = (_activeTasks[_selectedList!]?.length ?? 0) + (_completedTasks[_selectedList!]?.length ?? 0);
+      if (_selectedTaskIds.length == totalTasks) {
+        _selectedTaskIds.clear();
+        _selectionMode = false;
+      } else {
+        _selectedTaskIds = {
+          ...?_activeTasks[_selectedList!]?.map((t) => t.id),
+          ...?_completedTasks[_selectedList!]?.map((t) => t.id),
+        };
+        _selectionMode = true;
+      }
+    });
+  }
 
   ///Construção da tela principal.
   @override
   Widget build(BuildContext context) {
+    // Configura o tema do sistema e inicializa o MaterialApp.
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        systemNavigationBarColor: AppTheme.backgroundColor,
+        systemNavigationBarIconBrightness: Brightness.dark,
+        statusBarColor: AppTheme.primaryColor,
+        statusBarIconBrightness: Brightness.light,
+      ),
+    );
+
     return Scaffold(
       key: _scaffoldKey,
 
-      /// AppBar com título e ícone de menu.
       appBar: AppBar(
         iconTheme: IconThemeData(color: Colors.white),
         title: Text(_selectedList ?? 'Easy Tasks', style: const TextStyle(color: Colors.white, fontSize: 33)),
-
         centerTitle: true,
         backgroundColor: AppTheme.primaryColor,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(15))),
+        actions:
+            _selectionMode
+                ? [
+                  IconButton(
+                    icon: Icon(Icons.select_all),
+                    tooltip: "Selecionar/Deselecionar todas",
+                    onPressed: _selectAllTasks,
+                  ),
+                  IconButton(icon: Icon(Icons.delete), tooltip: "Apagar selecionadas", onPressed: _deleteSelectedTasks),
+                ]
+                : [],
       ),
 
-      /// Drawer com listas de tarefas.
       drawer: HomeDrawer(
         taskLists: _taskLists,
         selectedList: _selectedList,
@@ -291,7 +372,6 @@ class _HomeScreenState extends State<HomeScreen> {
         onDeleteList: _confirmDeleteList,
       ),
 
-      /// Corpo da tela com tarefas ativas e concluídas.
       body: HomeBody(
         selectedList: _selectedList,
         activeTasks: _activeTasks[_selectedList] ?? [],
@@ -299,9 +379,14 @@ class _HomeScreenState extends State<HomeScreen> {
         onToggleTask: _toggleTask,
         onDeleteTask: _confirmDelete,
         onEditTask: _editTaskDialog,
+        selectionMode: _selectionMode,
+        selectedTaskIds: _selectedTaskIds,
+        onTaskTap: _onTaskTap,
+        onTaskLongPress: _onTaskLongPress,
+        onDeleteSelected: _deleteSelectedTasks,
+        onSelectAll: _selectAllTasks,
       ),
 
-      /// Botão flutuante para adicionar nova tarefa.
       floatingActionButton: FloatingActionButton(
         onPressed: _addTaskButton,
         backgroundColor: AppTheme.primaryColor,

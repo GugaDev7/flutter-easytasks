@@ -3,9 +3,9 @@ import 'package:flutter_easytasks/utils/apptheme.dart';
 import 'task_section.dart';
 import '../../models/task.dart';
 
-/// Widget que representa o corpo da tela inicial, exibindo as tarefas ativas e concluídas.
+//// Widget que representa o corpo da tela inicial, exibindo as tarefas ativas e concluídas.
 class HomeBody extends StatelessWidget {
-  /// Nome da lista de tarefas atualmente selecionada.
+  /// Lista selecionada atualmente, ou null se nenhuma lista estiver selecionada.
   final String? selectedList;
 
   /// Lista de tarefas ativas.
@@ -14,16 +14,34 @@ class HomeBody extends StatelessWidget {
   /// Lista de tarefas concluídas.
   final List<Task> completedTasks;
 
-  /// Função chamada ao alternar o estado de uma tarefa (ativa/concluída).
+  /// Função chamada quando uma tarefa é marcada como concluída ou não concluída.
   final void Function(Task) onToggleTask;
 
-  /// Função chamada ao deletar uma tarefa.
+  /// Função chamada para deletar uma tarefa.
   final void Function(Task) onDeleteTask;
 
-  /// Função chamada ao editar uma tarefa.
+  /// Função chamada para editar uma tarefa.
   final void Function(Task) onEditTask;
 
-  /// Construtor do HomeBody.
+  /// Indica se o modo de seleção está ativo.
+  final bool selectionMode;
+
+  /// Conjunto de IDs de tarefas selecionadas.
+  final Set<String> selectedTaskIds;
+
+  /// Função chamada quando uma tarefa é tocada.
+  final Function(Task) onTaskTap;
+
+  /// Função chamada quando uma tarefa é pressionada longamente.
+  final Function(Task) onTaskLongPress;
+
+  /// Função chamada para deletar as tarefas selecionadas.
+  final VoidCallback onDeleteSelected;
+
+  /// Função chamada para selecionar todas as tarefas.
+  final VoidCallback onSelectAll;
+
+  /// Construtor do widget HomeBody.
   const HomeBody({
     super.key,
     required this.selectedList,
@@ -32,9 +50,14 @@ class HomeBody extends StatelessWidget {
     required this.onToggleTask,
     required this.onDeleteTask,
     required this.onEditTask,
+    required this.selectionMode,
+    required this.selectedTaskIds,
+    required this.onTaskTap,
+    required this.onTaskLongPress,
+    required this.onDeleteSelected,
+    required this.onSelectAll,
   });
 
-  /// Constrói o widget HomeBody.
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -57,6 +80,8 @@ class HomeBody extends StatelessWidget {
                   ],
                 ),
               )
+              /// Se uma lista estiver selecionada, exibe as tarefas ativas e concluídas.
+              /// As tarefas são organizadas em seções, cada uma com seu título e lista de tarefas.
               : ListView(
                 children: [
                   if (activeTasks.isNotEmpty)
@@ -65,15 +90,23 @@ class HomeBody extends StatelessWidget {
                       tasks: activeTasks,
                       onToggle: onToggleTask,
                       onDelete: onDeleteTask,
-                      onTap: onEditTask,
+                      onTaskTap: onTaskTap,
+                      onTaskLongPress: onTaskLongPress,
+                      selectionMode: selectionMode,
+                      selectedTaskIds: selectedTaskIds,
                     ),
+
+                  /// Se não houver tarefas ativas, exibe uma mensagem informando que não há tarefas ativas.
                   if (completedTasks.isNotEmpty)
                     TaskSection(
                       title: 'Tarefas Concluídas',
                       tasks: completedTasks,
                       onToggle: onToggleTask,
                       onDelete: onDeleteTask,
-                      onTap: onEditTask,
+                      onTaskTap: onTaskTap,
+                      onTaskLongPress: onTaskLongPress,
+                      selectionMode: selectionMode,
+                      selectedTaskIds: selectedTaskIds,
                     ),
                 ],
               ),

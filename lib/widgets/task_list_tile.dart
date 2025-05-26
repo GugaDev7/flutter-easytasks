@@ -1,30 +1,41 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 
-/// Widget que representa um item de lista de tarefas.
+/// Widget que representa um item de tarefa na lista de tarefas.
 class TaskListTile extends StatelessWidget {
-  /// Tarefa a ser exibida no item da lista.
+  /// Tarefa a ser exibida, contendo título e estado de conclusão.
   final Task task;
 
-  /// Função chamada ao alternar o estado da tarefa (ativa/concluída).
+  /// Função chamada quando a tarefa é marcada como concluída ou não concluída.
   final Function(Task) onToggle;
 
-  /// Função chamada ao deletar a tarefa.
+  /// Função chamada para deletar a tarefa.
   final Function(Task) onDelete;
 
-  /// Função chamada ao tocar na tarefa, permitindo ações adicionais (ex: abrir detalhes).
+  /// Função chamada quando a tarefa é tocada.
   final VoidCallback? onTap;
 
-  /// Construtor do TaskListTile.
+  /// Função chamada quando a tarefa é pressionada longamente.
+  final VoidCallback? onLongPress;
+
+  /// Indica se o modo de seleção está ativo.
+  final bool selectionMode;
+
+  /// Indica se a tarefa está selecionada.
+  final bool isSelected;
+
+  /// Construtor do widget TaskListTile.
   const TaskListTile({
     super.key,
     required this.task,
     required this.onToggle,
     required this.onDelete,
-    required this.onTap,
+    this.onTap,
+    this.onLongPress,
+    required this.selectionMode,
+    required this.isSelected,
   });
 
-  /// Constrói o widget TaskListTile.
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -38,9 +49,12 @@ class TaskListTile extends StatelessWidget {
             color: task.isCompleted ? Colors.grey : Colors.black,
           ),
         ),
-        trailing: Checkbox(value: task.isCompleted, onChanged: (_) => onToggle(task)),
-        onLongPress: () => onDelete(task),
+        trailing:
+            /// Exibe o botão de deletar apenas se não estiver no modo de seleção.
+            selectionMode ? null : Checkbox(value: task.isCompleted, onChanged: (_) => onToggle(task)),
+        onLongPress: onLongPress,
         onTap: onTap,
+        leading: selectionMode ? Checkbox(value: isSelected, onChanged: (_) => onTap?.call()) : null,
       ),
     );
   }

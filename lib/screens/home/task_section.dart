@@ -4,32 +4,43 @@ import '../../widgets/task_list_tile.dart';
 
 /// Widget que representa uma seção de tarefas, exibindo uma lista de tarefas ativas ou concluídas.
 class TaskSection extends StatelessWidget {
-  /// Título da seção (ex: "Ativas" ou "Concluídas").
+  // Título da seção, como "Tarefas Ativas" ou "Tarefas Concluídas".
   final String title;
 
-  /// Lista de tarefas a serem exibidas nesta seção.
+  // Lista de tarefas a serem exibidas nesta seção.
   final List<Task> tasks;
 
-  /// Função chamada ao alternar o estado de uma tarefa (ativa/concluída).
+  // Funções de callback para manipulação de tarefas.
   final void Function(Task) onToggle;
 
-  /// Função chamada ao deletar uma tarefa.
+  // Função para deletar uma tarefa.
   final void Function(Task) onDelete;
 
-  /// Função chamada ao tocar em uma tarefa, permitindo ações adicionais (ex: abrir detalhes).
-  final void Function(Task) onTap;
+  // Função chamada quando uma tarefa é tocada.
+  final void Function(Task) onTaskTap;
 
-  /// Construtor da seção de tarefas.
+  // Função chamada quando uma tarefa é pressionada longamente.
+  final void Function(Task) onTaskLongPress;
+
+  // Indica se o modo de seleção está ativo.
+  final bool selectionMode;
+
+  // Conjunto de IDs de tarefas selecionadas.
+  final Set<String> selectedTaskIds;
+
+  /// Construtor do widget TaskSection.
   const TaskSection({
     super.key,
     required this.title,
     required this.tasks,
     required this.onToggle,
     required this.onDelete,
-    required this.onTap,
+    required this.onTaskTap,
+    required this.onTaskLongPress,
+    required this.selectionMode,
+    required this.selectedTaskIds,
   });
 
-  /// Constrói a seção de tarefas.
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -39,9 +50,19 @@ class TaskSection extends StatelessWidget {
           padding: const EdgeInsets.all(16.0),
           child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
         ),
-        ...tasks //'spread operator' => '...' serve para inserir todos os itens da lista (tasks).
-            .map((task) => TaskListTile(task: task, onToggle: onToggle, onDelete: onDelete, onTap: () => onTap(task)))
-            .toList(),
+
+        /// Lista de tarefas, exibindo cada tarefa como um item de lista.
+        ...tasks.map(
+          (task) => TaskListTile(
+            task: task,
+            onToggle: onToggle,
+            onDelete: onDelete,
+            onTap: () => onTaskTap(task),
+            onLongPress: () => onTaskLongPress(task),
+            selectionMode: selectionMode,
+            isSelected: selectedTaskIds.contains(task.id),
+          ),
+        ),
       ],
     );
   }
