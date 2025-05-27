@@ -77,4 +77,18 @@ class TaskService {
       await tasksCollection.doc(task.id).set(task.toMap());
     }
   }
+
+  /// Método para deletar lista de tarefas do Firebase.
+  Future<void> deleteTaskList(String listName) async {
+    final listDoc = _firestore.collection('users').doc(_userId).collection('lists').doc(listName);
+
+    // Remove todas as tarefas da lista
+    final tasksSnapshot = await listDoc.collection('tasks').get();
+    for (final doc in tasksSnapshot.docs) {
+      await doc.reference.delete();
+    }
+
+    // Remove o documento da lista
+    await listDoc.delete();
+  }
 }

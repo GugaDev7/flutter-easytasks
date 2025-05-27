@@ -38,7 +38,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Modo de seleção múltipla.
   bool _selectionMode = false;
+
+  /// IDs das tarefas selecionadas.
   Set<String> _selectedTaskIds = {};
+
+  /// Controlador do serviço de autenticação.
+  bool _isLoading = true;
 
   /// Chave global para o Scaffold, usada para exibir o Snackbar.
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -46,13 +51,16 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(systemNavigationBarColor: AppTheme.backgroundColor));
     _initializeData();
   }
 
   /// Inicializa os dados, carregando listas e tarefas.
   Future<void> _initializeData() async {
+    setState(() => _isLoading = true);
     await _loadTaskLists();
     if (_selectedList != null) await _loadTasks(_selectedList!);
+    setState(() => _isLoading = false);
   }
 
   /// Carrega as listas de tarefas do serviço.
@@ -173,6 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (confirm == true) {
+      await _taskService.deleteTaskList(listName);
       setState(() {
         _taskLists.remove(listName);
         _activeTasks.remove(listName);
@@ -227,21 +236,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Exibe um diálogo para editar uma tarefa.
   Future<void> _editTaskDialog(TaskModel task) async {
-    final result = await AppDialog.showTaskDialog(
-      context: context,
-      title: 'Editar Tarefa',
-      initialTitle: task.title,
-      initialPriority: task.priority,
-      confirmText: 'Salvar',
-    );
-    if (result != null && result['title']!.isNotEmpty) {
-      final updatedTask = task.copyWith(title: result['title'], priority: result['priority']);
-      setState(() {
+  final result = await AppDialog.showTaskDialog(
+    context: context,
+    title: 'Editar Tarefa',
+    initialTitle: task.title,
+    initialPriority: task.priority,
+    confirmText: 'Salvar',
+  );
+  if (result != null && result['title']!.isNotEmpty) {
+    final updatedTask = task.copyWith(title: result['title'], priority: result['priority']);
+    setState(() {
+      if (!task.isCompleted) {
         TaskManager.updateTask(_activeTasks[_selectedList!]!, updatedTask);
-      });
-      await saveTasks(_selectedList!);
-    }
+      } else {
+        TaskManager.updateTask(_completedTasks[_selectedList!]!, updatedTask);
+      }
+    });
+    await saveTasks(_selectedList!);
   }
+}
 
   /// Exibe um diálogo para adicionar uma nova tarefa.
   Future<void> _addTaskButton() async {
@@ -341,7 +354,9 @@ class _HomeScreenState extends State<HomeScreen> {
   ///Construção da tela principal.
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(systemNavigationBarColor: AppTheme.backgroundColor));
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     return Scaffold(
       key: _scaffoldKey,
 
