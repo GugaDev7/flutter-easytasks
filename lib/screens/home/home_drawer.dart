@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easytasks/utils/apptheme.dart';
 
@@ -24,8 +25,11 @@ class HomeDrawer extends StatelessWidget {
   /// Função chamada ao deletar uma lista de tarefas.
   final Function(String) onDeleteList;
 
+  /// Usuário autenticado atualmente.
+  final user = FirebaseAuth.instance.currentUser;
+
   /// Construtor do HomeDrawer.
-  const HomeDrawer({
+  HomeDrawer({
     super.key,
     required this.taskLists,
     required this.selectedList,
@@ -77,6 +81,17 @@ class HomeDrawer extends StatelessWidget {
             leading: const Icon(Icons.add, color: AppTheme.primaryColor),
             title: const Text("Nova Lista", style: TextStyle(color: AppTheme.primaryColor)),
             onTap: onAddTaskList,
+          ),
+          const SizedBox(height: 16),
+          const Divider(color: Colors.grey),
+
+          /// Exibe o nome do usuário autenticado, se disponível.
+          Padding(
+            padding: const EdgeInsets.only(left: 16),
+            child: Text(
+              user?.displayName ?? '',
+              style: const TextStyle(color: AppTheme.primaryColor, fontSize: 18, fontWeight: FontWeight.bold),
+            ),
           ),
           ListTile(
             leading: const Icon(Icons.exit_to_app, color: AppTheme.primaryColor),

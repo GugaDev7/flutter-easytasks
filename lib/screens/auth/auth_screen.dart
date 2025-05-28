@@ -101,12 +101,12 @@ class _AuthScreenState extends State<AuthScreen> {
                         visible: !entry,
                         child: TextFormField(
                           controller: _nameController,
-                          decoration: getTextfieldDecoration("Nome Completo"),
+                          decoration: getTextfieldDecoration("Nome de Exibição"),
                           validator: (String? value) {
                             if (value == null) {
                               return "O nome não pode ser vazio";
                             }
-                            if (value.length < 5) {
+                            if (value.length < 4) {
                               return "O nome é muito curto";
                             }
                             return null;
@@ -124,6 +124,8 @@ class _AuthScreenState extends State<AuthScreen> {
                           if (value.length < 5) {
                             return "O e-mail é muito curto";
                           }
+
+                          /// Validação simples de e-mail usando regex.
                           final emailRegex = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
                           if (!emailRegex.hasMatch(value.trim())) {
                             return "O e-mail não é válido";
