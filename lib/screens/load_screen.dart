@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easytasks/utils/apptheme.dart';
 
+/// Tela de carregamento que é exibida durante operações assíncronas, como login ou registro.
 class LoadScreen extends StatelessWidget {
   const LoadScreen({super.key});
 

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easytasks/components/textformfield_decoration.dart';
 import 'package:flutter_easytasks/screens/home/home_screen.dart';
+import 'package:flutter_easytasks/screens/load_screen.dart';
 import 'package:flutter_easytasks/services/auth_service.dart';
 import 'package:flutter_easytasks/utils/apptheme.dart';
 import 'package:flutter_easytasks/utils/snackbar_utils.dart';
+import 'package:flutter_easytasks/widgets/app_dialog.dart';
 
 /// Tela de autenticação do usuário, que permite login e cadastro.
 class AuthScreen extends StatefulWidget {
@@ -37,28 +39,29 @@ class _AuthScreenState extends State<AuthScreen> {
   final AuthService _authService = AuthService();
 
   /// Método que é chamado quando o botão de autenticação é pressionado.
-  void authButton() {
+  void authButton() async {
     String name = _nameController.text;
     String password = _passwordController.text;
     String email = _emailController.text;
 
     if (_formkey.currentState!.validate()) {
+      // Exibe o loading
+      showDialog(context: context, barrierDismissible: false, builder: (context) => const LoadScreen());
+
+      String? erro;
       if (entry) {
-        _authService.loginUser(email: email, password: password).then((String? erro) {
-          if (erro != null) {
-            SnackbarUtils.showError(context, erro);
-          } else {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen(context)));
-          }
-        });
+        erro = await _authService.loginUser(email: email, password: password);
       } else {
-        _authService.registerUser(name: name, password: password, email: email).then((String? erro) {
-          if (erro != null) {
-            SnackbarUtils.showError(context, erro);
-          } else {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen(context)));
-          }
-        });
+        erro = await _authService.registerUser(name: name, password: password, email: email);
+      }
+
+      // Fecha o loading
+      Navigator.of(context, rootNavigator: true).pop();
+
+      if (erro != null) {
+        SnackbarUtils.showError(context, erro);
+      } else {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen(context)));
       }
     }
   }
@@ -84,7 +87,8 @@ class _AuthScreenState extends State<AuthScreen> {
             child: Form(
               key: _formkey,
               child: SingleChildScrollView(
-                child: Padding(padding: EdgeInsets.only(top: 100),
+                child: Padding(
+                  padding: EdgeInsets.only(top: 100),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -120,8 +124,9 @@ class _AuthScreenState extends State<AuthScreen> {
                           if (value.length < 5) {
                             return "O e-mail é muito curto";
                           }
-                          if (!value.contains("@")) {
-                            return "O e-mail não é valido";
+                          final emailRegex = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+                          if (!emailRegex.hasMatch(value.trim())) {
+                            return "O e-mail não é válido";
                           }
                           return null;
                         },
@@ -187,6 +192,32 @@ class _AuthScreenState extends State<AuthScreen> {
                           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                       ),
+
+                      /// Se o usuário estiver na tela de login, exibe o botão para redefinir a senha.
+                      if (entry)
+                        /// Exibe o botão de redefinição de senha.
+                        TextButton(
+                          onPressed: () async {
+                            final email = await AppDialog.showResetPasswordDialog(context: context);
+
+                            /// Se o usuário forneceu um e-mail, tenta redefinir a senha.
+                            if (email != null && email.isNotEmpty) {
+                              final result = await _authService.resetPassword(email: email);
+
+                              /// Se o resultado for nulo, significa que o e-mail foi enviado com sucesso.
+                              /// Caso contrário, exibe uma mensagem de erro.
+                              if (result == null) {
+                                SnackbarUtils.showSuccess(context, 'E-mail de redefinição enviado!');
+                              } else {
+                                SnackbarUtils.showError(context, result);
+                              }
+                            }
+                          },
+                          child: const Text(
+                            "Esqueci minha senha",
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ),
                     ],
                   ),
                 ),

@@ -45,6 +45,26 @@ class AuthService {
     }
   }
 
+  /// Método para resetar a senha do usuário.
+  Future<String?> resetPassword({required String email}) async {
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: email);
+      return null;
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'user-not-found':
+          return 'E-mail não cadastrado.';
+        case 'invalid-email':
+          return 'E-mail inválido.';
+        default:
+          return 'Erro ao enviar e-mail de redefinição.';
+      }
+    } catch (e) {
+      return 'Erro inesperado. Tente novamente.';
+    }
+  }
+
+  /// Método para fazer logout do usuário.
   Future<void> logout() {
     return _firebaseAuth.signOut();
   }

@@ -144,4 +144,59 @@ class AppDialog {
           ),
     );
   }
+
+  /// Diálogo para redefinir senha (com e-mail).
+  static Future<String?> showResetPasswordDialog({
+    required BuildContext context,
+    String title = 'Redefinir senha',
+    String labelText = 'Digite seu e-mail',
+    String confirmText = 'Enviar',
+    String cancelText = 'Cancelar',
+  }) async {
+    final controller = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    return await showDialog<String>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text(title, style: TextStyle(color: AppTheme.primaryColor)),
+            content: Form(
+              key: formKey,
+              child: TextFormField(
+                controller: controller,
+                decoration: getTextfieldDecoration(labelText),
+                autofocus: true,
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  final email = value?.trim() ?? '';
+                  final emailRegex = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+                  if (email.isEmpty) {
+                    return 'Digite um e-mail.';
+                  }
+                  if (!emailRegex.hasMatch(email)) {
+                    return 'Digite um e-mail válido.';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(cancelText, style: TextStyle(color: AppTheme.dialogBtn)),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (formKey.currentState?.validate() ?? false) {
+                    Navigator.pop(context, controller.text.trim());
+                  }
+                },
+                child: Text(confirmText, style: TextStyle(color: AppTheme.dialogBtn)),
+              ),
+            ],
+            backgroundColor: Colors.white,
+          ),
+    );
+  }
 }
