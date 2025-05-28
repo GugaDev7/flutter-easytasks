@@ -84,107 +84,111 @@ class _AuthScreenState extends State<AuthScreen> {
             child: Form(
               key: _formkey,
               child: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 90),
-                    Image.asset("assets/icons/icon_nobg.png", height: 350),
-                    Visibility(
-                      visible: !entry,
-                      child: TextFormField(
-                        controller: _nameController,
-                        decoration: getTextfieldDecoration("Nome Completo"),
+                child: Padding(padding: EdgeInsets.only(top: 100),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 60),
+                      Image.asset("assets/icons/icon_nobg2.png", height: 200),
+                      const SizedBox(height: 20),
+                      Visibility(
+                        visible: !entry,
+                        child: TextFormField(
+                          controller: _nameController,
+                          decoration: getTextfieldDecoration("Nome Completo"),
+                          validator: (String? value) {
+                            if (value == null) {
+                              return "O nome não pode ser vazio";
+                            }
+                            if (value.length < 5) {
+                              return "O nome é muito curto";
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: getTextfieldDecoration("E-mail"),
                         validator: (String? value) {
                           if (value == null) {
-                            return "O nome não pode ser vazio";
+                            return "O e-mail não pode ser vazio";
                           }
                           if (value.length < 5) {
-                            return "O nome é muito curto";
+                            return "O e-mail é muito curto";
+                          }
+                          if (!value.contains("@")) {
+                            return "O e-mail não é valido";
                           }
                           return null;
                         },
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: getTextfieldDecoration("E-mail"),
-                      validator: (String? value) {
-                        if (value == null) {
-                          return "O e-mail não pode ser vazio";
-                        }
-                        if (value.length < 5) {
-                          return "O e-mail é muito curto";
-                        }
-                        if (!value.contains("@")) {
-                          return "O e-mail não é valido";
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _passwordController,
-                      decoration: getTextfieldDecoration("Senha"),
-                      validator: (String? value) {
-                        if (value == null) {
-                          return "A senha não pode ser vazia";
-                        }
-                        if (value.length < 5) {
-                          return "A senha é muito curta";
-                        }
-                        return null;
-                      },
-                      obscureText: true,
-                    ),
-                    const SizedBox(height: 8),
-                    Visibility(
-                      visible: !entry,
-                      child: TextFormField(
-                        controller: _confirmPasswordController,
-                        decoration: getTextfieldDecoration("Confirme a Senha"),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: getTextfieldDecoration("Senha"),
                         validator: (String? value) {
                           if (value == null) {
-                            return "A confirmação da senha não pode ser vazia";
+                            return "A senha não pode ser vazia";
                           }
-                          if (value != _passwordController.text) {
-                            return "As senhas não coincidem";
+                          if (value.length < 5) {
+                            return "A senha é muito curta";
                           }
                           return null;
                         },
                         obscureText: true,
                       ),
-                    ),
-                    const SizedBox(height: 32),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
-                      onPressed: () {
-                        authButton();
-                      },
-                      child: Text((entry) ? "Entrar" : "Cadastrar"),
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          entry = !entry;
-                        });
-                        if (entry) {
-                          _nameController.clear();
-                          _passwordController.clear();
-                          _confirmPasswordController.clear();
-                          _emailController.clear();
-                        } else {
-                          _passwordController.clear();
-                        }
-                      },
-                      child: Text(
-                        (entry) ? "Cadastre-se" : "Fazer Login",
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                      const SizedBox(height: 8),
+                      Visibility(
+                        visible: !entry,
+                        child: TextFormField(
+                          controller: _confirmPasswordController,
+                          decoration: getTextfieldDecoration("Confirme a Senha"),
+                          validator: (String? value) {
+                            if (value == null) {
+                              return "A confirmação da senha não pode ser vazia";
+                            }
+                            if (value != _passwordController.text) {
+                              return "As senhas não coincidem";
+                            }
+                            return null;
+                          },
+                          obscureText: true,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 32),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+                        onPressed: () {
+                          authButton();
+                        },
+                        child: Text((entry) ? "Entrar" : "Cadastrar"),
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            entry = !entry;
+                          });
+                          if (entry) {
+                            _nameController.clear();
+                            _passwordController.clear();
+                            _confirmPasswordController.clear();
+                            _emailController.clear();
+                          } else {
+                            _passwordController.clear();
+                          }
+                        },
+                        child: Text(
+                          (entry) ? "Cadastre-se" : "Fazer Login",
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

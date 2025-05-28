@@ -4,6 +4,7 @@ import 'package:flutter_easytasks/controllers/task_manager.dart';
 import 'package:flutter_easytasks/screens/auth/auth_screen.dart';
 import 'package:flutter_easytasks/screens/home/home_body.dart';
 import 'package:flutter_easytasks/screens/home/home_drawer.dart';
+import 'package:flutter_easytasks/screens/load_screen.dart';
 import 'package:flutter_easytasks/services/auth_service.dart';
 import 'package:flutter_easytasks/utils/snackbar_utils.dart';
 import 'package:flutter_easytasks/utils/apptheme.dart';
@@ -355,7 +356,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return LoadScreen();
     }
     return Scaffold(
       key: _scaffoldKey,

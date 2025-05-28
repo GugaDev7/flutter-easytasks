@@ -26,7 +26,22 @@ class AuthService {
       await _firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
       return null;
     } on FirebaseAuthException catch (e) {
-      return e.message;
+      switch (e.code) {
+        case 'invalid-credential':
+          return 'Credenciais inválidas. Verifique o e-mail e a senha.';
+        case 'user-not-found':
+          return 'Usuário não encontrado. Verifique o e-mail.';
+        case 'wrong-password':
+          return 'Senha incorreta. Tente novamente.';
+        case 'invalid-email':
+          return 'E-mail inválido.';
+        case 'user-disabled':
+          return 'Usuário desativado.';
+        default:
+          return 'Erro ao fazer login. Tente novamente.';
+      }
+    } catch (e) {
+      return 'Erro inesperado. Tente novamente.';
     }
   }
 
