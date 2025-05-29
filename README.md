@@ -19,7 +19,6 @@ EasyTasks é um aplicativo de gerenciamento de tarefas com foco em usabilidade, 
 - 📱 **Offline First** - Funciona sem internet! Suas tarefas são salvas localmente e sincronizadas automaticamente com o Firebase quando a conexão voltar.
 - 🔄 **Sincronização Automática** - Alterações feitas offline são enviadas ao servidor assim que a internet retorna.
 - ✏️ **Edição Fácil** - Toque prolongado para editar/remover.
-- 📤 **Backup Simples** - Exportação/importação de dados.
 
 ---
 
@@ -28,7 +27,6 @@ EasyTasks é um aplicativo de gerenciamento de tarefas com foco em usabilidade, 
 - **Flutter 3.19** - Framework multiplataforma.
 - **Dart 3.3** - Linguagem de programação.
 - **Firebase Auth & Firestore** - Autenticação e banco de dados em nuvem com suporte offline.
-- **SharedPreferences** - Armazenamento local.
 - **Material Design 3** - Design system moderno.
 
 ---
