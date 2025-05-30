@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_easytasks/controllers/task_manager.dart';
+import 'package:flutter_easytasks/controllers/task_controller.dart';
+import 'package:flutter_easytasks/controllers/task_list_controller.dart';
 import 'package:flutter_easytasks/screens/auth/auth_screen.dart';
 import 'package:flutter_easytasks/screens/home/home_body.dart';
 import 'package:flutter_easytasks/screens/home/home_drawer.dart';
 import 'package:flutter_easytasks/screens/load_screen.dart';
 import 'package:flutter_easytasks/services/auth_service.dart';
+import 'package:flutter_easytasks/services/dialog_service.dart';
 import 'package:flutter_easytasks/utils/snackbar_utils.dart';
 import 'package:flutter_easytasks/utils/apptheme.dart';
-import 'package:flutter_easytasks/widgets/app_dialog.dart';
-import '../../services/task_service.dart';
 import '../../models/task_model.dart';
 
 /// Tela principal do aplicativo, responsável por gerenciar listas e tarefas.
@@ -22,31 +22,9 @@ class HomeScreen extends StatefulWidget {
 
 /// Estado da tela principal, com lógica de manipulação das listas e tarefas.
 class _HomeScreenState extends State<HomeScreen> {
-  /// Serviço para persistência das tarefas.
-  final TaskService _taskService = TaskService();
-
-  /// Lista de nomes das listas de tarefas.
-  List<String> _taskLists = [];
-
-  /// Nome da lista atualmente selecionada.
-  String? _selectedList;
-
-  /// Mapa de tarefas ativas por lista.
-  final Map<String, List<TaskModel>> _activeTasks = {};
-
-  /// Mapa de tarefas concluídas por lista.
-  final Map<String, List<TaskModel>> _completedTasks = {};
-
-  /// Modo de seleção múltipla.
-  bool _selectionMode = false;
-
-  /// IDs das tarefas selecionadas.
-  Set<String> _selectedTaskIds = {};
-
-  /// Controlador do serviço de autenticação.
+  final TaskListController _listController = TaskListController();
+  final TaskController _taskController = TaskController();
   bool _isLoading = true;
-
-  /// Chave global para o Scaffold, usada para exibir o Snackbar.
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -59,288 +37,180 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Inicializa os dados, carregando listas e tarefas.
   Future<void> _initializeData() async {
     setState(() => _isLoading = true);
-    await _loadTaskLists();
-    if (_selectedList != null) await _loadTasks(_selectedList!);
+    await _listController.loadTaskLists(context);
+    if (_listController.selectedList != null) {
+      await _listController.loadTasks(_listController.selectedList!, context);
+    }
     setState(() => _isLoading = false);
-  }
-
-  /// Carrega as listas de tarefas do serviço.
-  Future<void> _loadTaskLists() async {
-    try {
-      final lists = await _taskService.loadTaskLists();
-      setState(() {
-        _taskLists = lists;
-        _selectedList = _taskLists.isNotEmpty ? _taskLists[0] : null;
-      });
-    } catch (e) {
-      SnackbarUtils.showError(context, 'Erro ao carregar listas: $e');
-    }
-  }
-
-  /// Carrega as tarefas de uma lista específica.
-  Future<void> _loadTasks(String listName) async {
-    try {
-      final tasks = await _taskService.loadTasks(listName);
-      setState(() {
-        _activeTasks[listName] = tasks['active']!;
-        _completedTasks[listName] = tasks['completed']!;
-        TaskManager.sortTasks(_activeTasks[listName]!);
-      });
-    } catch (e) {
-      SnackbarUtils.showError(context, 'Erro ao carregar tarefas: $e');
-    }
-  }
-
-  /// Salva as listas de tarefas no serviço.
-  Future<void> _saveTaskLists() async {
-    try {
-      await _taskService.saveTaskLists(_taskLists);
-    } catch (e) {
-      SnackbarUtils.showError(context, 'Erro ao salvar listas: $e');
-    }
-  }
-
-  /// Salva as tarefas de uma lista específica no serviço.
-  Future<void> saveTasks(String listName) async {
-    try {
-      final allTasks = [...?_activeTasks[listName], ...?_completedTasks[listName]];
-      await _taskService.saveTasks(listName, allTasks);
-    } catch (e) {
-      SnackbarUtils.showError(context, 'Erro ao salvar tarefas: $e');
-    }
   }
 
   /// Alterna o status de conclusão de uma tarefa.
   void _toggleTask(TaskModel task) {
     setState(() {
-      TaskManager.toggleTask(
+      _taskController.toggleTask(
         task: task,
-        activeTasks: _activeTasks[_selectedList!]!,
-        completedTasks: _completedTasks[_selectedList!]!,
+        activeTasks: _listController.activeTasks[_listController.selectedList!]!,
+        completedTasks: _listController.completedTasks[_listController.selectedList!]!,
       );
     });
-    saveTasks(_selectedList!);
+    _listController.saveTasks(_listController.selectedList!, context);
   }
 
   /// Exibe um diálogo de confirmação para apagar uma tarefa.
   Future<void> _confirmDelete(TaskModel task) async {
-    final confirm = await AppDialog.showConfirmation(
-      context: context,
-      title: 'Apagar Tarefa',
-      content: 'Deseja realmente apagar esta tarefa?',
+    final confirm = await DialogService.showDeleteConfirmation(
+      context,
+      customMessage: 'Deseja realmente apagar esta tarefa?',
     );
 
     if (confirm == true) {
       setState(() {
         if (!task.isCompleted) {
-          TaskManager.removeTask(_activeTasks[_selectedList!]!, task);
+          _taskController.removeTask(_listController.activeTasks[_listController.selectedList!]!, task);
         } else {
-          TaskManager.removeTask(_completedTasks[_selectedList!]!, task);
+          _taskController.removeTask(_listController.completedTasks[_listController.selectedList!]!, task);
         }
       });
-      await saveTasks(_selectedList!);
+      await _listController.saveTasks(_listController.selectedList!, context);
     }
   }
 
   /// Exibe um diálogo para adicionar uma nova lista de tarefas.
   Future<void> _addTaskList() async {
-    final newListName = await AppDialog.showEditText(
-      context: context,
-      title: 'Nova Lista',
-      labelText: 'Insira o nome da Lista.',
-      confirmText: 'Criar',
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return "Este campo não pode estar vazio.";
-        }
-        if (_taskLists.contains(value.trim())) {
-          return "Essa Lista já existe!";
-        }
-        return null;
-      },
-    );
+    final newListName = await DialogService.showAddListDialog(context, _listController.taskLists);
 
     if (newListName != null && newListName.isNotEmpty) {
       setState(() {
-        _taskLists.add(newListName);
-        _activeTasks[newListName] = [];
-        _completedTasks[newListName] = [];
-        _selectedList = newListName;
+        _listController.taskLists.add(newListName);
+        _listController.activeTasks[newListName] = [];
+        _listController.completedTasks[newListName] = [];
+        _listController.selectedList = newListName;
       });
-      await _saveTaskLists();
-      await saveTasks(newListName);
+      await _listController.saveTaskLists(context);
+      await _listController.saveTasks(newListName, context);
     }
   }
 
   /// Exibe um diálogo de confirmação para apagar uma lista de tarefas.
   Future<void> _confirmDeleteList(String listName) async {
-    final confirm = await AppDialog.showConfirmation(
-      context: context,
-      title: 'Apagar Lista',
-      content: 'Deseja apagar a lista "$listName"?',
-      confirmText: 'Apagar',
+    final confirm = await DialogService.showDeleteConfirmation(
+      context,
+      customMessage: 'Deseja apagar a lista "$listName"?',
     );
 
     if (confirm == true) {
-      await _taskService.deleteTaskList(listName);
-      setState(() {
-        _taskLists.remove(listName);
-        _activeTasks.remove(listName);
-        _completedTasks.remove(listName);
-        _selectedList = _taskLists.isNotEmpty ? _taskLists[0] : null;
-      });
-      await _saveTaskLists();
-      if (_selectedList != null) await saveTasks(_selectedList!);
+      await _listController.deleteTaskList(listName, context);
+      setState(() {});
+      await _listController.saveTaskLists(context);
     }
   }
 
   /// Exibe um diálogo para editar o nome de uma lista de tarefas.
-  Future<void> _editListNameDialog(String currentListName) async {
-    final newName = await AppDialog.showEditText(
-      context: context,
-      title: 'Renomear Lista',
-      initialValue: currentListName,
-      labelText: 'Insira o nome da Lista.',
-      confirmText: 'Salvar',
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return "Este campo não pode estar vazio.";
-        }
-        if (_taskLists.contains(value.trim())) {
-          return "Essa Lista já existe!";
-        }
-        return null;
-      },
-    );
+  Future<void> _editListName(String currentListName) async {
+    final newName = await DialogService.showEditListDialog(context, currentListName, _listController.taskLists);
 
     if (newName != null && newName != currentListName) {
       setState(() {
-        final index = _taskLists.indexOf(currentListName);
-        _taskLists[index] = newName;
+        final index = _listController.taskLists.indexOf(currentListName);
+        _listController.taskLists[index] = newName;
 
-        if (_activeTasks.containsKey(currentListName)) {
-          _activeTasks[newName] = _activeTasks.remove(currentListName)!;
+        if (_listController.activeTasks.containsKey(currentListName)) {
+          _listController.activeTasks[newName] = _listController.activeTasks.remove(currentListName)!;
         }
-        if (_completedTasks.containsKey(currentListName)) {
-          _completedTasks[newName] = _completedTasks.remove(currentListName)!;
+        if (_listController.completedTasks.containsKey(currentListName)) {
+          _listController.completedTasks[newName] = _listController.completedTasks.remove(currentListName)!;
         }
 
-        if (_selectedList == currentListName) {
-          _selectedList = newName;
+        if (_listController.selectedList == currentListName) {
+          _listController.selectedList = newName;
         }
       });
 
-      await _saveTaskLists();
-      await saveTasks(newName);
+      await _listController.saveTaskLists(context);
+      await _listController.saveTasks(newName, context);
     }
   }
 
   /// Exibe um diálogo para editar uma tarefa.
-  Future<void> _editTaskDialog(TaskModel task) async {
-  final result = await AppDialog.showTaskDialog(
-    context: context,
-    title: 'Editar Tarefa',
-    initialTitle: task.title,
-    initialPriority: task.priority,
-    confirmText: 'Salvar',
-  );
-  if (result != null && result['title']!.isNotEmpty) {
-    final updatedTask = task.copyWith(title: result['title'], priority: result['priority']);
-    setState(() {
-      if (!task.isCompleted) {
-        TaskManager.updateTask(_activeTasks[_selectedList!]!, updatedTask);
-      } else {
-        TaskManager.updateTask(_completedTasks[_selectedList!]!, updatedTask);
-      }
-    });
-    await saveTasks(_selectedList!);
+  Future<void> _editTask(TaskModel task) async {
+    final result = await DialogService.showEditTaskDialog(context, task);
+    if (result != null && result['title']!.isNotEmpty) {
+      final updatedTask = task.copyWith(title: result['title'], priority: result['priority']);
+      setState(() {
+        if (!task.isCompleted) {
+          _taskController.updateTask(_listController.activeTasks[_listController.selectedList!]!, updatedTask);
+        } else {
+          _taskController.updateTask(_listController.completedTasks[_listController.selectedList!]!, updatedTask);
+        }
+      });
+      await _listController.saveTasks(_listController.selectedList!, context);
+    }
   }
-}
 
   /// Exibe um diálogo para adicionar uma nova tarefa.
-  Future<void> _addTaskButton() async {
-    if (_selectedList == null) {
+  Future<void> _addTask() async {
+    if (_listController.selectedList == null) {
       SnackbarUtils.showError(context, 'Crie uma lista primeiro!');
-    } else {
-      final result = await AppDialog.showTaskDialog(context: context, title: 'Nova Tarefa', confirmText: 'Adicionar');
-      if (result != null && result['title']!.isNotEmpty) {
-        setState(() {
-          TaskManager.addTask(
-            _activeTasks[_selectedList!]!,
-            TaskModel(title: result['title']!, priority: result['priority']!),
-          );
-        });
-        await saveTasks(_selectedList!);
-      } else if (result != null && result['title']!.isEmpty) {
-        SnackbarUtils.showError(context, "A Tarefa precisa de um nome!");
-      }
+      return;
+    }
+
+    final result = await DialogService.showAddTaskDialog(context);
+    if (result != null && result['title']!.isNotEmpty) {
+      setState(() {
+        _taskController.addTask(
+          _listController.activeTasks[_listController.selectedList!]!,
+          TaskModel(title: result['title']!, priority: result['priority']!),
+        );
+      });
+      await _listController.saveTasks(_listController.selectedList!, context);
     }
   }
 
   /// Seleciona uma lista de tarefas.
-  void _selectTaskList(String listName) {
-    setState(() => _selectedList = listName);
-    _loadTasks(listName);
+  void _selectList(String listName) {
+    setState(() => _listController.selectedList = listName);
+    _listController.loadTasks(listName, context);
     Navigator.pop(context);
   }
 
   /// Manipula o toque em uma tarefa, alternando entre seleção e edição.
   void _onTaskTap(TaskModel task) {
-    if (_selectionMode) {
-      setState(() {
-        if (_selectedTaskIds.contains(task.id)) {
-          _selectedTaskIds.remove(task.id);
-          if (_selectedTaskIds.isEmpty) _selectionMode = false;
-        } else {
-          _selectedTaskIds.add(task.id);
-        }
-      });
-    } else {
-      _editTaskDialog(task);
-    }
+    setState(() {
+      _taskController.onTaskTap(task, () => _editTask(task));
+    });
   }
 
   /// Manipula o pressionamento longo em uma tarefa, ativando o modo de seleção.
   void _onTaskLongPress(TaskModel task) {
     setState(() {
-      _selectionMode = true;
-      _selectedTaskIds.add(task.id);
+      _taskController.onTaskLongPress(task);
     });
   }
 
   /// Deleta as tarefas selecionadas.
   Future<void> _deleteSelectedTasks() async {
-    final confirm = await AppDialog.showConfirmation(
-      context: context,
-      title: 'Apagar Tarefas',
-      content: 'Deseja apagar as tarefas selecionadas?',
-      confirmText: 'Apagar',
+    final confirm = await DialogService.showDeleteConfirmation(
+      context,
+      customMessage: 'Deseja apagar as tarefas selecionadas?',
     );
     if (confirm == true) {
       setState(() {
-        _activeTasks[_selectedList!]?.removeWhere((t) => _selectedTaskIds.contains(t.id));
-        _completedTasks[_selectedList!]?.removeWhere((t) => _selectedTaskIds.contains(t.id));
-        _selectedTaskIds.clear();
-        _selectionMode = false;
+        _taskController.deleteSelectedTasks(
+          _listController.activeTasks[_listController.selectedList!]!,
+          _listController.completedTasks[_listController.selectedList!]!,
+        );
       });
-      await saveTasks(_selectedList!);
+      await _listController.saveTasks(_listController.selectedList!, context);
     }
   }
 
   /// Seleciona ou desseleciona todas as tarefas da lista atual.
   void _selectAllTasks() {
     setState(() {
-      final totalTasks = (_activeTasks[_selectedList!]?.length ?? 0) + (_completedTasks[_selectedList!]?.length ?? 0);
-      if (_selectedTaskIds.length == totalTasks) {
-        _selectedTaskIds.clear();
-        _selectionMode = false;
-      } else {
-        _selectedTaskIds = {
-          ...?_activeTasks[_selectedList!]?.map((t) => t.id),
-          ...?_completedTasks[_selectedList!]?.map((t) => t.id),
-        };
-        _selectionMode = true;
-      }
+      _taskController.selectAllTasks(
+        _listController.activeTasks[_listController.selectedList!]!,
+        _listController.completedTasks[_listController.selectedList!]!,
+      );
     });
   }
 
@@ -363,12 +233,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
       appBar: AppBar(
         iconTheme: IconThemeData(color: Colors.white),
-        title: Text(_selectedList ?? 'Easy Tasks', style: const TextStyle(color: Colors.white, fontSize: 33)),
+        title: Text(
+          _listController.selectedList ?? 'Easy Tasks',
+          style: const TextStyle(color: Colors.white, fontSize: 33),
+        ),
         centerTitle: true,
         backgroundColor: AppTheme.primaryColor,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(15))),
         actions:
-            _selectionMode
+            _taskController.selectionMode
                 ? [
                   IconButton(
                     icon: Icon(Icons.select_all),
@@ -381,24 +254,24 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
 
       drawer: HomeDrawer(
-        taskLists: _taskLists,
-        selectedList: _selectedList,
-        onSelectList: _selectTaskList,
+        taskLists: _listController.taskLists,
+        selectedList: _listController.selectedList,
+        onSelectList: _selectList,
         onAddTaskList: _addTaskList,
-        onEditListName: _editListNameDialog,
+        onEditListName: _editListName,
         onDeleteList: _confirmDeleteList,
         onExit: _exit,
       ),
 
       body: HomeBody(
-        selectedList: _selectedList,
-        activeTasks: _activeTasks[_selectedList] ?? [],
-        completedTasks: _completedTasks[_selectedList] ?? [],
+        selectedList: _listController.selectedList,
+        activeTasks: _listController.activeTasks[_listController.selectedList] ?? [],
+        completedTasks: _listController.completedTasks[_listController.selectedList] ?? [],
         onToggleTask: _toggleTask,
         onDeleteTask: _confirmDelete,
-        onEditTask: _editTaskDialog,
-        selectionMode: _selectionMode,
-        selectedTaskIds: _selectedTaskIds,
+        onEditTask: _editTask,
+        selectionMode: _taskController.selectionMode,
+        selectedTaskIds: _taskController.selectedTaskIds,
         onTaskTap: _onTaskTap,
         onTaskLongPress: _onTaskLongPress,
         onDeleteSelected: _deleteSelectedTasks,
@@ -406,7 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
 
       floatingActionButton: FloatingActionButton(
-        onPressed: _addTaskButton,
+        onPressed: _addTask,
         backgroundColor: AppTheme.primaryColor,
         child: const Icon(Icons.add, color: Colors.white),
       ),

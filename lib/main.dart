@@ -10,6 +10,7 @@ void main() async {
   /// Garante que os bindings do Flutter estejam inicializados antes de usar qualquer funcionalidade do Flutter.
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   // Configura o tema do sistema e inicializa o MaterialApp.
   SystemChrome.setSystemUIOverlayStyle(
     SystemUiOverlayStyle(
@@ -19,18 +20,20 @@ void main() async {
       statusBarIconBrightness: Brightness.light,
     ),
   );
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 /// Widget raiz do aplicativo.
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Lista de Tarefas',
       theme: AppTheme.themeData,
-      home: HomeorauthScreen(),
+      home: const HomeorauthScreen(),
     );
   }
 }
