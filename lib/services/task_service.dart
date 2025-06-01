@@ -2,46 +2,65 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/task_model.dart';
 
-/// Serviço para gerenciar tarefas e listas de tarefas no Firestore.
+/// Classe que cuida de salvar e carregar dados no Firebase
 class TaskService {
-  /// Construtor privado para garantir que a classe seja um singleton.
+  /// Instância do Firestore para acessar o banco
   final _firestore = FirebaseFirestore.instance;
 
-  /// Instância do FirebaseAuth para autenticação de usuários.
+  /// Instância do Auth para pegar o usuário logado
   final _auth = FirebaseAuth.instance;
 
-  /// Construtor privado para garantir que a classe seja um singleton.
+  /// Pega o ID do usuário logado
   String get _userId {
     final user = _auth.currentUser;
     if (user == null) throw Exception('Usuário não autenticado');
     return user.uid;
   }
 
-  /// Método privado para garantir que a classe seja um singleton.
+  /// Carrega os nomes de todas as listas do usuário
   Future<List<String>> loadTaskLists() async {
-    final snapshot = await _firestore.collection('users').doc(_userId).collection('lists').get();
+    final snapshot =
+        await _firestore
+            .collection('users')
+            .doc(_userId)
+            .collection('lists')
+            .get();
     return snapshot.docs.map((doc) => doc.id).toList();
   }
 
-  /// Método para carregar as listas de tarefas do usuário autenticado.
+  /// Salva os nomes das listas do usuário
   Future<void> saveTaskLists(List<String> taskLists) async {
     for (final listName in taskLists) {
-      await _firestore.collection('users').doc(_userId).collection('lists').doc(listName).set({});
+      await _firestore
+          .collection('users')
+          .doc(_userId)
+          .collection('lists')
+          .doc(listName)
+          .set({});
     }
   }
 
-  /// Método para carregar as tarefas de uma lista específica.
+  /// Carrega todas as tarefas de uma lista
   Future<Map<String, List<TaskModel>>> loadTasks(String listName) async {
+    /// Busca as tarefas no Firebase
     final snapshot =
-        await _firestore.collection('users').doc(_userId).collection('lists').doc(listName).collection('tasks').get();
+        await _firestore
+            .collection('users')
+            .doc(_userId)
+            .collection('lists')
+            .doc(listName)
+            .collection('tasks')
+            .get();
 
-    /// Divide as tarefas em ativas e concluídas.
+    /// Separa as tarefas em ativas e concluídas
     final activeTasks = <TaskModel>[];
 
-    /// Lista para armazenar as tarefas ativas.
+    /// Lista de tarefas não concluídas
     final completedTasks = <TaskModel>[];
 
-    /// Lista para armazenar as tarefas concluídas.
+    /// Lista de tarefas concluídas
+
+    /// Coloca cada tarefa na lista correta
     for (final doc in snapshot.docs) {
       final task = TaskModel.fromMap(doc.data());
       task.isCompleted ? completedTasks.add(task) : activeTasks.add(task);
@@ -50,8 +69,9 @@ class TaskService {
     return {'active': activeTasks, 'completed': completedTasks};
   }
 
-  /// Método para salvar as tarefas de uma lista específica.
+  /// Salva todas as tarefas de uma lista
   Future<void> saveTasks(String listName, List<TaskModel> allTasks) async {
+    /// Pega a coleção de tarefas no Firebase
     final tasksCollection = _firestore
         .collection('users')
         .doc(_userId)
@@ -59,36 +79,41 @@ class TaskService {
         .doc(listName)
         .collection('tasks');
 
-    /// Obtém as tarefas existentes no Firestore para comparação.
+    /// Carrega as tarefas que já existem
     final oldTasks = await tasksCollection.get();
 
-    /// Converte as tarefas existentes em um conjunto de IDs para fácil comparação.
+    /// Pega os IDs das novas tarefas
     final newIds = allTasks.map((t) => t.id).toSet();
 
-    // Remove tarefas que não existem mais
+    /// Apaga as tarefas que não existem mais
     for (final doc in oldTasks.docs) {
       if (!newIds.contains(doc.id)) {
         await doc.reference.delete();
       }
     }
 
-    // Adiciona ou atualiza tarefas
+    /// Salva ou atualiza cada tarefa
     for (final task in allTasks) {
       await tasksCollection.doc(task.id).set(task.toMap());
     }
   }
 
-  /// Método para deletar lista de tarefas do Firebase.
+  /// Deleta uma lista e todas suas tarefas
   Future<void> deleteTaskList(String listName) async {
-    final listDoc = _firestore.collection('users').doc(_userId).collection('lists').doc(listName);
+    /// Pega o documento da lista
+    final listDoc = _firestore
+        .collection('users')
+        .doc(_userId)
+        .collection('lists')
+        .doc(listName);
 
-    // Remove todas as tarefas da lista
+    /// Apaga todas as tarefas da lista
     final tasksSnapshot = await listDoc.collection('tasks').get();
     for (final doc in tasksSnapshot.docs) {
       await doc.reference.delete();
     }
 
-    // Remove o documento da lista
+    /// Apaga a lista
     await listDoc.delete();
   }
 }

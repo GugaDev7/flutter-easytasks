@@ -1,125 +1,92 @@
 import '../models/task_model.dart';
 import 'interfaces/i_task_controller.dart';
 
-/// Controlador responsável por gerenciar operações relacionadas às tarefas individuais.
-///
-/// Este controlador implementa [ITaskController] e fornece funcionalidades para:
-/// * Gerenciamento do modo de seleção de tarefas
-/// * Manipulação do estado de conclusão das tarefas
-/// * Operações CRUD (Criar, Ler, Atualizar, Deletar) em tarefas
-/// * Gerenciamento de seleção múltipla de tarefas
+/// Classe que controla todas as operações com tarefas individuais
 class TaskController implements ITaskController {
-  /// Indica se o modo de seleção múltipla está ativo
+  /// Indica se está no modo de selecionar várias tarefas
   @override
   bool selectionMode = false;
 
-  /// Conjunto de IDs das tarefas atualmente selecionadas
-  ///
-  /// Usa [Set] para garantir unicidade e operações O(1) de adição/remoção
+  /// Guarda os IDs das tarefas selecionadas
+  /// Usa Set para não ter IDs repetidos e ser mais rápido
   @override
   final Set<String> selectedTaskIds = {};
 
-  /// Alterna o estado de conclusão de uma tarefa entre ativa e completada.
-  ///
-  /// Move a tarefa entre as listas [activeTasks] e [completedTasks] de acordo
-  /// com seu novo estado.
-  ///
-  /// Parâmetros:
-  /// * [task] - A tarefa a ser alternada
-  /// * [activeTasks] - Lista de tarefas ativas
-  /// * [completedTasks] - Lista de tarefas completadas
+  /// Marca/desmarca uma tarefa como concluída
+  /// Move a tarefa entre as listas de ativas e concluídas
   @override
   void toggleTask({
     required TaskModel task,
     required List<TaskModel> activeTasks,
     required List<TaskModel> completedTasks,
   }) {
+    /// Cria uma cópia da tarefa com o estado invertido
     final newTask = task.copyWith(isCompleted: !task.isCompleted);
     if (task.isCompleted) {
+      /// Se estava concluída, move para ativas
       completedTasks.remove(task);
       activeTasks.add(newTask);
     } else {
+      /// Se estava ativa, move para concluídas
       activeTasks.remove(task);
       completedTasks.add(newTask);
     }
   }
 
-  /// Atualiza uma tarefa existente na lista.
-  ///
-  /// Localiza a tarefa pelo ID e substitui com a versão atualizada.
-  ///
-  /// Parâmetros:
-  /// * [tasks] - Lista de tarefas onde a atualização será feita
-  /// * [updatedTask] - Nova versão da tarefa com as alterações
+  /// Atualiza os dados de uma tarefa existente
   @override
   void updateTask(List<TaskModel> tasks, TaskModel updatedTask) {
+    /// Procura a tarefa pelo ID e substitui
     final index = tasks.indexWhere((t) => t.id == updatedTask.id);
     if (index != -1) {
       tasks[index] = updatedTask;
     }
   }
 
-  /// Adiciona uma nova tarefa à lista especificada.
-  ///
-  /// Parâmetros:
-  /// * [tasks] - Lista onde a tarefa será adicionada
-  /// * [task] - Nova tarefa a ser adicionada
+  /// Adiciona uma nova tarefa na lista
   @override
   void addTask(List<TaskModel> tasks, TaskModel task) {
     tasks.add(task);
   }
 
-  /// Remove uma tarefa da lista especificada.
-  ///
-  /// Parâmetros:
-  /// * [tasks] - Lista de onde a tarefa será removida
-  /// * [task] - Tarefa a ser removida
+  /// Remove uma tarefa da lista
   @override
   void removeTask(List<TaskModel> tasks, TaskModel task) {
     tasks.remove(task);
   }
 
-  /// Gerencia o toque em uma tarefa.
-  ///
-  /// Se estiver em modo de seleção, alterna a seleção da tarefa.
-  /// Caso contrário, chama o callback de edição.
-  ///
-  /// Parâmetros:
-  /// * [task] - Tarefa que recebeu o toque
-  /// * [editCallback] - Função a ser chamada para editar a tarefa
+  /// Trata o toque em uma tarefa
   @override
   void onTaskTap(TaskModel task, Function editCallback) {
     if (selectionMode) {
+      /// Se estiver selecionando, marca/desmarca a tarefa
       _toggleTaskSelection(task.id);
     } else {
+      /// Se não, abre para editar
       editCallback();
     }
   }
 
-  /// Inicia o modo de seleção ao receber um toque longo em uma tarefa.
-  ///
-  /// Parâmetros:
-  /// * [task] - Tarefa que recebeu o toque longo
+  /// Trata o toque longo em uma tarefa
   @override
   void onTaskLongPress(TaskModel task) {
+    /// Ativa o modo de seleção e marca a tarefa
     selectionMode = true;
     selectedTaskIds.add(task.id);
   }
 
-  /// Alterna entre selecionar todas as tarefas ou limpar a seleção.
-  ///
-  /// Se todas as tarefas já estiverem selecionadas, limpa a seleção.
-  /// Caso contrário, seleciona todas as tarefas.
-  ///
-  /// Parâmetros:
-  /// * [activeTasks] - Lista de tarefas ativas
-  /// * [completedTasks] - Lista de tarefas completadas
+  /// Seleciona todas as tarefas ou limpa a seleção
   @override
-  void selectAllTasks(List<TaskModel> activeTasks, List<TaskModel> completedTasks) {
+  void selectAllTasks(
+    List<TaskModel> activeTasks,
+    List<TaskModel> completedTasks,
+  ) {
     final totalTasks = activeTasks.length + completedTasks.length;
     if (selectedTaskIds.length == totalTasks) {
+      /// Se todas já estão selecionadas, limpa
       _clearSelection();
     } else {
+      /// Se não, seleciona todas
       selectedTaskIds
         ..clear()
         ..addAll(activeTasks.map((t) => t.id))
@@ -128,32 +95,33 @@ class TaskController implements ITaskController {
     }
   }
 
-  /// Remove todas as tarefas selecionadas das listas.
-  ///
-  /// Parâmetros:
-  /// * [activeTasks] - Lista de tarefas ativas
-  /// * [completedTasks] - Lista de tarefas completadas
+  /// Deleta todas as tarefas selecionadas
   @override
-  void deleteSelectedTasks(List<TaskModel> activeTasks, List<TaskModel> completedTasks) {
+  void deleteSelectedTasks(
+    List<TaskModel> activeTasks,
+    List<TaskModel> completedTasks,
+  ) {
+    /// Remove das duas listas todas as tarefas selecionadas
     activeTasks.removeWhere((t) => selectedTaskIds.contains(t.id));
     completedTasks.removeWhere((t) => selectedTaskIds.contains(t.id));
     _clearSelection();
   }
 
-  /// Alterna a seleção de uma tarefa específica.
-  ///
-  /// Se a tarefa já estiver selecionada, remove a seleção.
-  /// Caso contrário, adiciona à seleção.
+  /// Marca/desmarca uma tarefa como selecionada
   void _toggleTaskSelection(String taskId) {
     if (selectedTaskIds.contains(taskId)) {
+      /// Se já estava selecionada, desmarca
       selectedTaskIds.remove(taskId);
+
+      /// Se não sobrou nenhuma, desativa o modo de seleção
       if (selectedTaskIds.isEmpty) selectionMode = false;
     } else {
+      /// Se não estava selecionada, marca
       selectedTaskIds.add(taskId);
     }
   }
 
-  /// Limpa todas as seleções e desativa o modo de seleção.
+  /// Limpa todas as seleções
   void _clearSelection() {
     selectedTaskIds.clear();
     selectionMode = false;

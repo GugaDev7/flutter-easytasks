@@ -31,7 +31,8 @@ class _AuthScreenState extends State<AuthScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   /// Controlador de texto para o campo de confirmação de senha.
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   /// Controlador de texto para o campo de nome completo.
   final TextEditingController _nameController = TextEditingController();
@@ -47,13 +48,21 @@ class _AuthScreenState extends State<AuthScreen> {
 
     if (_formkey.currentState!.validate()) {
       // Exibe o loading
-      showDialog(context: context, barrierDismissible: false, builder: (context) => const LoadScreen());
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const LoadScreen(),
+      );
 
       String? erro;
       if (entry) {
         erro = await _authService.loginUser(email: email, password: password);
       } else {
-        erro = await _authService.registerUser(name: name, password: password, email: email);
+        erro = await _authService.registerUser(
+          name: name,
+          password: password,
+          email: email,
+        );
       }
 
       // Fecha o loading
@@ -62,7 +71,10 @@ class _AuthScreenState extends State<AuthScreen> {
       if (erro != null) {
         SnackbarUtils.showError(context, erro);
       } else {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen(context)));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen(context)),
+        );
       }
     }
   }
@@ -102,13 +114,18 @@ class _AuthScreenState extends State<AuthScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           const SizedBox(height: 60),
-                          Image.asset("assets/icons/icon_nobg2.png", height: 200),
+                          Image.asset(
+                            "assets/icons/icon_nobg2.png",
+                            height: 200,
+                          ),
                           const SizedBox(height: 20),
                           Visibility(
                             visible: !entry,
                             child: TextFormField(
                               controller: _nameController,
-                              decoration: getTextfieldDecoration("Nome de Exibição"),
+                              decoration: getTextfieldDecoration(
+                                "Nome de Exibição",
+                              ),
                               validator: (String? value) {
                                 if (value == null) {
                                   return "O nome não pode ser vazio";
@@ -131,9 +148,11 @@ class _AuthScreenState extends State<AuthScreen> {
                               if (value.length < 5) {
                                 return "O e-mail é muito curto";
                               }
-                    
+
                               /// Validação simples de e-mail usando regex.
-                              final emailRegex = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+                              final emailRegex = RegExp(
+                                r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$",
+                              );
                               if (!emailRegex.hasMatch(value.trim())) {
                                 return "O e-mail não é válido";
                               }
@@ -160,7 +179,9 @@ class _AuthScreenState extends State<AuthScreen> {
                             visible: !entry,
                             child: TextFormField(
                               controller: _confirmPasswordController,
-                              decoration: getTextfieldDecoration("Confirme a Senha"),
+                              decoration: getTextfieldDecoration(
+                                "Confirme a Senha",
+                              ),
                               validator: (String? value) {
                                 if (value == null) {
                                   return "A confirmação da senha não pode ser vazia";
@@ -175,7 +196,9 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                           const SizedBox(height: 32),
                           ElevatedButton(
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                            ),
                             onPressed: () {
                               authButton();
                             },
@@ -198,25 +221,35 @@ class _AuthScreenState extends State<AuthScreen> {
                             },
                             child: Text(
                               (entry) ? "Cadastre-se" : "Fazer Login",
-                              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                    
+
                           /// Se o usuário estiver na tela de login, exibe o botão para redefinir a senha.
                           if (entry)
                             /// Exibe o botão de redefinição de senha.
                             TextButton(
                               onPressed: () async {
-                                final email = await AppDialog.showResetPasswordDialog(context: context);
-                    
+                                final email =
+                                    await AppDialog.showResetPasswordDialog(
+                                      context: context,
+                                    );
+
                                 /// Se o usuário forneceu um e-mail, tenta redefinir a senha.
                                 if (email != null && email.isNotEmpty) {
-                                  final result = await _authService.resetPassword(email: email);
-                    
+                                  final result = await _authService
+                                      .resetPassword(email: email);
+
                                   /// Se o resultado for nulo, significa que o e-mail foi enviado com sucesso.
                                   /// Caso contrário, exibe uma mensagem de erro.
                                   if (result == null) {
-                                    SnackbarUtils.showSuccess(context, 'E-mail de redefinição enviado!');
+                                    SnackbarUtils.showSuccess(
+                                      context,
+                                      'E-mail de redefinição enviado!',
+                                    );
                                   } else {
                                     SnackbarUtils.showError(context, result);
                                   }
@@ -224,7 +257,10 @@ class _AuthScreenState extends State<AuthScreen> {
                               },
                               child: const Text(
                                 "Esqueci minha senha",
-                                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                         ],

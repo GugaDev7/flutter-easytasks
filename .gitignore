@@ -230,3 +230,136 @@ profile
 coverage/
 .vagrant/
 .melos_tool/
+
+# Arquivos de Segurança e Configuração
+*.env
+*.env.*
+.env.local
+.env.development
+.env.test
+.env.production
+*.secret
+*.key
+*.pem
+*.cert
+*.p12
+*.keystore
+*.jks
+*.pepk
+*.aab
+*.apk
+upload-keystore.jks
+key.properties
+
+# Arquivos de Configuração Firebase/Google
+google-services.json
+GoogleService-Info.plist
+firebase_options.dart
+firebase_app_id_file.json
+firebase-debug.log
+
+# Arquivos de Analytics e Logs
+analytics/
+logs/
+*.log
+crash-reports/
+firebase-debug.log
+firebase-debug.*.log
+remote-config-debug.json
+
+# Arquivos de Cache e Temporários
+.temp/
+.cache/
+tmp/
+temp/
+.gradle/
+.dart_tool/
+.pub-cache/
+*.cache
+*.tmp
+
+# Arquivos de IDE e Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+*.bak
+*.orig
+*.rej
+*~
+
+# Arquivos de Build e Dependências
+build/
+dist/
+out/
+*.lock
+pubspec.lock
+Podfile.lock
+Gemfile.lock
+yarn.lock
+package-lock.json
+
+# Arquivos de Teste e Cobertura
+coverage/
+test-results/
+junit/
+*.lcov
+.test_coverage.dart
+coverage.xml
+.coverage
+htmlcov/
+
+# Arquivos de Sistema
+.DS_Store
+Thumbs.db
+*.db
+desktop.ini
+.directory
+
+# Flutter/Dart específico
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+build/
+ios/Pods/
+android/.gradle/
+android/app/release/
+ios/Flutter/.last_build_id
+
+# Arquivos de Documentação Local
+docs/internal/
+*.private.md
+NOTES.md
+TODO.md
+
+# Arquivos de Deploy e CI/CD
+codemagic.yaml
+*.mobileprovision
+*.provisionprofile
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+vendor/bundle/
+
+# Arquivos de Backup
+*.bak
+*.gho
+*.ori
+*.orig
+*.tmp
+
+# Arquivos de Configuração Local
+local.properties
+.settings/
+.project
+.classpath
+
+# Outros
+node_modules/
+.sass-cache/
+*.css.map
+*.sass.map
+*.scss.map

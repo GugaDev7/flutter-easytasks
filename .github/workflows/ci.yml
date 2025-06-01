@@ -1,0 +1,81 @@
+# Nome do workflow que vai aparecer no GitHub
+name: CI/CD
+
+# Define quando o workflow vai rodar
+on:
+  push:
+    branches: [ main ]  # roda quando tiver push na branch main
+  pull_request:
+    branches: [ main ]  # roda quando tiver pull request pra main
+
+# Lista de jobs que vão rodar
+jobs:
+  # Job de build e teste
+  build:
+    runs-on: ubuntu-latest  # roda na última versão do Ubuntu
+
+    steps:
+    # Faz checkout do código
+    - uses: actions/checkout@v3
+    
+    # Configura o Flutter
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.7.0'  # versão do Flutter
+        channel: 'stable'         # usa o canal estável
+        
+    # Instala as dependências do projeto
+    - name: Install dependencies
+      run: flutter pub get
+      
+    # Verifica se o código está formatado corretamente
+    - name: Verify formatting
+      run: dart format --output=none --set-exit-if-changed .
+      
+    # Analisa o código em busca de problemas
+    - name: Analyze project source
+      run: flutter analyze
+      
+    # Roda os testes e gera relatório de cobertura
+    - name: Run tests
+      run: flutter test --coverage
+      
+    # Envia o relatório de cobertura pro Codecov
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}  # token do Codecov
+        file: coverage/lcov.info             # arquivo com dados da cobertura
+        
+  # Job de build do Android
+  build-android:
+    needs: build  # só roda depois que o job build passar
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'  # só roda se for na branch main
+    
+    steps:
+    # Faz checkout do código
+    - uses: actions/checkout@v3
+    
+    # Configura o Flutter
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.7.0'
+        channel: 'stable'
+        
+    # Instala as dependências
+    - name: Install dependencies
+      run: flutter pub get
+      
+    # Gera o APK de release
+    - name: Build APK
+      run: flutter build apk --release
+      
+    # Salva o APK como artefato
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-apk  # nome do artefato
+        path: build/app/outputs/flutter-apk/app-release.apk  # caminho do APK 

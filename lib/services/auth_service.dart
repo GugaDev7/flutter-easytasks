@@ -1,18 +1,26 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
+// Classe que cuida de toda a autenticação com Firebase
 class AuthService {
+  // Instância do Firebase Auth
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
-  Future<String?> registerUser({required String name, required String password, required String email}) async {
+  // Registra um novo usuário com email e senha
+  Future<String?> registerUser({
+    required String name,
+    required String password,
+    required String email,
+  }) async {
     try {
-      UserCredential userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      // Cria o usuário no Firebase
+      UserCredential userCredential = await _firebaseAuth
+          .createUserWithEmailAndPassword(email: email, password: password);
 
+      // Atualiza o nome de exibição do usuário
       await userCredential.user!.updateDisplayName(name);
-      return null;
+      return null; // Retorna null se deu tudo certo
     } on FirebaseAuthException catch (e) {
+      // Trata os erros específicos do Firebase
       if (e.code == "email-already-in-use") {
         return "Usuário já cadastrado!";
       }
@@ -21,11 +29,20 @@ class AuthService {
     }
   }
 
-  Future<String?> loginUser({required String email, required String password}) async {
+  // Faz login com email e senha
+  Future<String?> loginUser({
+    required String email,
+    required String password,
+  }) async {
     try {
-      await _firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
-      return null;
+      // Tenta fazer login no Firebase
+      await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return null; // Retorna null se deu tudo certo
     } on FirebaseAuthException catch (e) {
+      // Trata os diferentes tipos de erro que podem acontecer
       switch (e.code) {
         case 'invalid-credential':
           return 'Credenciais inválidas. Verifique o e-mail e a senha.';
@@ -45,12 +62,14 @@ class AuthService {
     }
   }
 
-  /// Método para resetar a senha do usuário.
+  // Envia email para resetar a senha
   Future<String?> resetPassword({required String email}) async {
     try {
+      // Pede pro Firebase enviar o email
       await _firebaseAuth.sendPasswordResetEmail(email: email);
-      return null;
+      return null; // Retorna null se deu tudo certo
     } on FirebaseAuthException catch (e) {
+      // Trata os erros específicos
       switch (e.code) {
         case 'user-not-found':
           return 'E-mail não cadastrado.';
@@ -64,7 +83,7 @@ class AuthService {
     }
   }
 
-  /// Método para fazer logout do usuário.
+  // Faz logout do usuário atual
   Future<void> logout() {
     return _firebaseAuth.signOut();
   }

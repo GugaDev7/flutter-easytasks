@@ -22,6 +22,7 @@ class HomeScreen extends StatefulWidget {
 
 /// Estado da tela principal, com lógica de manipulação das listas e tarefas.
 class _HomeScreenState extends State<HomeScreen> {
+  /// Controladores para gerenciar listas e tarefas
   final TaskListController _listController = TaskListController();
   final TaskController _taskController = TaskController();
   bool _isLoading = true;
@@ -30,7 +31,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(systemNavigationBarColor: AppTheme.backgroundColor));
+
+    /// Configura a cor da barra de navegação
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(systemNavigationBarColor: AppTheme.backgroundColor),
+    );
     _initializeData();
   }
 
@@ -49,8 +54,10 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _taskController.toggleTask(
         task: task,
-        activeTasks: _listController.activeTasks[_listController.selectedList!]!,
-        completedTasks: _listController.completedTasks[_listController.selectedList!]!,
+        activeTasks:
+            _listController.activeTasks[_listController.selectedList!]!,
+        completedTasks:
+            _listController.completedTasks[_listController.selectedList!]!,
       );
     });
     _listController.saveTasks(_listController.selectedList!, context);
@@ -65,10 +72,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (confirm == true) {
       setState(() {
+        /// Remove a tarefa da lista correta (ativas ou concluídas)
         if (!task.isCompleted) {
-          _taskController.removeTask(_listController.activeTasks[_listController.selectedList!]!, task);
+          _taskController.removeTask(
+            _listController.activeTasks[_listController.selectedList!]!,
+            task,
+          );
         } else {
-          _taskController.removeTask(_listController.completedTasks[_listController.selectedList!]!, task);
+          _taskController.removeTask(
+            _listController.completedTasks[_listController.selectedList!]!,
+            task,
+          );
         }
       });
       await _listController.saveTasks(_listController.selectedList!, context);
@@ -77,10 +91,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Exibe um diálogo para adicionar uma nova lista de tarefas.
   Future<void> _addTaskList() async {
-    final newListName = await DialogService.showAddListDialog(context, _listController.taskLists);
+    final newListName = await DialogService.showAddListDialog(
+      context,
+      _listController.taskLists,
+    );
 
     if (newListName != null && newListName.isNotEmpty) {
       setState(() {
+        /// Cria a nova lista e seleciona ela
         _listController.taskLists.add(newListName);
         _listController.activeTasks[newListName] = [];
         _listController.completedTasks[newListName] = [];
@@ -107,20 +125,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Exibe um diálogo para editar o nome de uma lista de tarefas.
   Future<void> _editListName(String currentListName) async {
-    final newName = await DialogService.showEditListDialog(context, currentListName, _listController.taskLists);
+    final newName = await DialogService.showEditListDialog(
+      context,
+      currentListName,
+      _listController.taskLists,
+    );
 
     if (newName != null && newName != currentListName) {
       setState(() {
+        /// Atualiza o nome da lista em todos os lugares
         final index = _listController.taskLists.indexOf(currentListName);
         _listController.taskLists[index] = newName;
 
+        /// Move as tarefas para o novo nome
         if (_listController.activeTasks.containsKey(currentListName)) {
-          _listController.activeTasks[newName] = _listController.activeTasks.remove(currentListName)!;
+          _listController.activeTasks[newName] =
+              _listController.activeTasks.remove(currentListName)!;
         }
         if (_listController.completedTasks.containsKey(currentListName)) {
-          _listController.completedTasks[newName] = _listController.completedTasks.remove(currentListName)!;
+          _listController.completedTasks[newName] =
+              _listController.completedTasks.remove(currentListName)!;
         }
 
+        /// Atualiza a lista selecionada se necessário
         if (_listController.selectedList == currentListName) {
           _listController.selectedList = newName;
         }
@@ -135,12 +162,23 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _editTask(TaskModel task) async {
     final result = await DialogService.showEditTaskDialog(context, task);
     if (result != null && result['title']!.isNotEmpty) {
-      final updatedTask = task.copyWith(title: result['title'], priority: result['priority']);
+      /// Cria uma nova tarefa com os dados atualizados
+      final updatedTask = task.copyWith(
+        title: result['title'],
+        priority: result['priority'],
+      );
       setState(() {
+        /// Atualiza a tarefa na lista correta
         if (!task.isCompleted) {
-          _taskController.updateTask(_listController.activeTasks[_listController.selectedList!]!, updatedTask);
+          _taskController.updateTask(
+            _listController.activeTasks[_listController.selectedList!]!,
+            updatedTask,
+          );
         } else {
-          _taskController.updateTask(_listController.completedTasks[_listController.selectedList!]!, updatedTask);
+          _taskController.updateTask(
+            _listController.completedTasks[_listController.selectedList!]!,
+            updatedTask,
+          );
         }
       });
       await _listController.saveTasks(_listController.selectedList!, context);
@@ -157,6 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final result = await DialogService.showAddTaskDialog(context);
     if (result != null && result['title']!.isNotEmpty) {
       setState(() {
+        /// Adiciona a nova tarefa na lista de tarefas ativas
         _taskController.addTask(
           _listController.activeTasks[_listController.selectedList!]!,
           TaskModel(title: result['title']!, priority: result['priority']!),
@@ -218,7 +257,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void _exit() async {
     await AuthService().logout();
     if (mounted) {
-      Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => AuthScreen()), (route) => false);
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => AuthScreen()),
+        (route) => false,
+      );
     }
   }
 
@@ -239,7 +281,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         centerTitle: true,
         backgroundColor: AppTheme.primaryColor,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(15))),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(15)),
+        ),
         actions:
             _taskController.selectionMode
                 ? [
@@ -248,7 +292,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     tooltip: "Selecionar/Deselecionar todas",
                     onPressed: _selectAllTasks,
                   ),
-                  IconButton(icon: Icon(Icons.delete), tooltip: "Apagar selecionadas", onPressed: _deleteSelectedTasks),
+                  IconButton(
+                    icon: Icon(Icons.delete),
+                    tooltip: "Apagar selecionadas",
+                    onPressed: _deleteSelectedTasks,
+                  ),
                 ]
                 : [],
       ),
@@ -265,8 +313,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
       body: HomeBody(
         selectedList: _listController.selectedList,
-        activeTasks: _listController.activeTasks[_listController.selectedList] ?? [],
-        completedTasks: _listController.completedTasks[_listController.selectedList] ?? [],
+        activeTasks:
+            _listController.activeTasks[_listController.selectedList] ?? [],
+        completedTasks:
+            _listController.completedTasks[_listController.selectedList] ?? [],
         onToggleTask: _toggleTask,
         onDeleteTask: _confirmDelete,
         onEditTask: _editTask,

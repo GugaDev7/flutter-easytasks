@@ -4,7 +4,7 @@ import 'package:flutter_easytasks/screens/auth/auth_screen.dart';
 import 'package:flutter_easytasks/screens/home/home_screen.dart';
 import 'package:flutter_easytasks/screens/load_screen.dart';
 
-/// Tela que verifica se o usuário está autenticado e exibe a tela apropriada.
+/// Tela que decide se mostra a tela inicial ou a tela de login
 class HomeorauthScreen extends StatefulWidget {
   const HomeorauthScreen({super.key});
 
@@ -15,22 +15,20 @@ class HomeorauthScreen extends StatefulWidget {
 class _HomeorauthScreenState extends State<HomeorauthScreen> {
   @override
   Widget build(BuildContext context) {
-    return
-    /// Verifica se o usuário está autenticado e exibe a tela apropriada.
-    FutureBuilder<User?>(
-      future:
-      /// Obtém o usuário atual do Firebase Auth.
-      Future.value(FirebaseAuth.instance.currentUser),
-      builder:
-      /// Constrói o widget com base no estado da conexão do FutureBuilder.
-      (context, snapshot) {
-        /// Se a conexão estiver aguardando, exibe um indicador de progresso.
+    /// Usa FutureBuilder para verificar se o usuário está logado
+    return FutureBuilder<User?>(
+      /// Pega o usuário atual do Firebase
+      future: Future.value(FirebaseAuth.instance.currentUser),
+
+      /// Constrói a tela baseado no estado da autenticação
+      builder: (context, snapshot) {
+        /// Se estiver carregando, mostra a tela de loading
         if (snapshot.connectionState == ConnectionState.waiting) {
-          /// Retorna um Scaffold com um CircularProgressIndicator centralizado.
           return LoadScreen();
         }
 
-        /// Se o usuário estiver autenticado, exibe a tela inicial, caso contrário, exibe a tela de autenticação.
+        /// Se tiver um usuário logado, mostra a tela inicial
+        /// Se não, mostra a tela de login
         if (snapshot.data != null) {
           return HomeScreen(context);
         } else {

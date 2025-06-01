@@ -10,7 +10,10 @@ class DialogService {
   /// [context] é o contexto do BuildContext
   /// [existingLists] é a lista de nomes de listas já existentes
   /// Retorna o nome da nova lista ou null se cancelado
-  static Future<String?> showAddListDialog(BuildContext context, List<String> existingLists) async {
+  static Future<String?> showAddListDialog(
+    BuildContext context,
+    List<String> existingLists,
+  ) async {
     return await AppDialog.showEditText(
       context: context,
       title: Titles.newList,
@@ -49,7 +52,8 @@ class DialogService {
         if (value == null || value.trim().isEmpty) {
           return ErrorMessages.emptyField;
         }
-        if (existingLists.contains(value.trim()) && value.trim() != currentListName) {
+        if (existingLists.contains(value.trim()) &&
+            value.trim() != currentListName) {
           return ErrorMessages.listExists;
         }
         return null;
@@ -61,8 +65,14 @@ class DialogService {
   ///
   /// [context] é o contexto do BuildContext
   /// Retorna um mapa com o título e prioridade da tarefa ou null se cancelado
-  static Future<Map<String, dynamic>?> showAddTaskDialog(BuildContext context) async {
-    return await AppDialog.showTaskDialog(context: context, title: Titles.newTask, confirmText: ActionLabels.add);
+  static Future<Map<String, dynamic>?> showAddTaskDialog(
+    BuildContext context,
+  ) async {
+    return await AppDialog.showTaskDialog(
+      context: context,
+      title: Titles.newTask,
+      confirmText: ActionLabels.add,
+    );
   }
 
   /// Exibe um diálogo para editar uma tarefa existente
@@ -70,7 +80,10 @@ class DialogService {
   /// [context] é o contexto do BuildContext
   /// [task] é a tarefa a ser editada
   /// Retorna um mapa com o novo título e prioridade da tarefa ou null se cancelado
-  static Future<Map<String, dynamic>?> showEditTaskDialog(BuildContext context, TaskModel task) async {
+  static Future<Map<String, dynamic>?> showEditTaskDialog(
+    BuildContext context,
+    TaskModel task,
+  ) async {
     return await AppDialog.showTaskDialog(
       context: context,
       title: Titles.editTask,
@@ -85,7 +98,10 @@ class DialogService {
   /// [context] é o contexto do BuildContext
   /// [customMessage] é uma mensagem personalizada opcional
   /// Retorna true se confirmado, false se cancelado
-  static Future<bool?> showDeleteConfirmation(BuildContext context, {String? customMessage}) async {
+  static Future<bool?> showDeleteConfirmation(
+    BuildContext context, {
+    String? customMessage,
+  }) async {
     return await AppDialog.showConfirmation(
       context: context,
       title: Titles.delete,

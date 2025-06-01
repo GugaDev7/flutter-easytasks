@@ -1,30 +1,52 @@
 name: flutter_easytasks
-description: "Aplicativo de Tarefas."
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+description: "Um gerenciador de tarefas moderno e intuitivo desenvolvido com Flutter."
+publish_to: 'none'
 
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.7.0
+  sdk: '>=3.7.0 <4.0.0'
 
 dependencies:
-  shared_preferences: ^2.5.3
-  flutter_launcher_icons: ^0.14.3
-  flutter_native_splash: ^2.4.6
   flutter:
     sdk: flutter
 
+  # UI Components
+  cupertino_icons: ^1.0.6
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.3.10
   
-  cupertino_icons: ^1.0.8
-  firebase_core: ^3.10.1
-  firebase_auth: ^5.4.1
-  cloud_firestore: ^5.6.8
-  uuid: ^4.5.1
+  # State Management
+  flutter_bloc: ^8.1.4
+  equatable: ^2.0.5
+  
+  # Firebase
+  firebase_core: ^2.27.1
+  firebase_auth: ^4.17.9
+  cloud_firestore: ^4.15.9
+  
+  # Local Storage
+  shared_preferences: ^2.2.2
+  sqflite: ^2.3.2
+  path: ^1.8.3
+  
+  # Utils
+  uuid: ^4.3.3
+  intl: ^0.19.0
+  logger: ^2.0.2+1
+  
+  # Dependency Injection
+  get_it: ^7.6.7
+  injectable: ^2.3.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  bloc_test: ^9.1.6
+  mockito: ^5.4.4
+  build_runner: ^2.4.8
+  injectable_generator: ^2.4.1
+  flutter_lints: ^3.0.1
 
 flutter_launcher_icons:
   android: "launcher_icon"
@@ -34,8 +56,6 @@ flutter_launcher_icons:
   web:
     generate: true
     image_path: "assets/icons/icon.png"
-    # background_color: "#hexcode"
-    # theme_color: "#hexcode"
 
 flutter_native_splash:
   color: "#8AB3CF"
@@ -50,7 +70,6 @@ flutter_native_splash:
     image: "assets/icons/icon_nobg.png"
 
 flutter:
-
   uses-material-design: true
 
   assets:
