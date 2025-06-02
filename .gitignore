@@ -247,7 +247,6 @@ coverage/
 *.jks
 *.pepk
 *.aab
-*.apk
 upload-keystore.jks
 key.properties
 
