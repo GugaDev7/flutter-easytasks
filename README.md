@@ -1,72 +1,88 @@
 # 📱 EasyTasks - Gerenciador de Tarefas Intuitivo
 
+<div align="center">
+
 ![Flutter Version](https://img.shields.io/badge/flutter-3.19.5-blue)
+![Dart Version](https://img.shields.io/badge/dart-3.3.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
 
-**Organize sua vida de forma simples e eficiente!** 
-
-EasyTasks é um aplicativo de gerenciamento de tarefas com foco em usabilidade, produtividade e funcionamento offline.
+</div>
 
 ---
 
-## ✨ Funcionalidades Principais
+## 🎯 Sobre o Projeto
 
-- ✅ **Listas Organizáveis** - Crie listas personalizadas (Trabalho, Casa, etc).
-- 🚨 **Sistema de Prioridades** - Alta, Média, Baixa e Sem Prioridade.
-- ✔️ **Status de Conclusão** - Marque tarefas como ativas/concluídas.
-- 📱 **Offline First** - Funciona sem internet! Suas tarefas são salvas localmente e sincronizadas automaticamente com o Firebase quando a conexão voltar.
-- 🔄 **Sincronização Automática** - Alterações feitas offline são enviadas ao servidor assim que a internet retorna.
-- ✏️ **Edição Fácil** - Toque prolongado para editar/remover.
+**EasyTasks** é um aplicativo de gerenciamento de tarefas moderno e responsivo, desenvolvido com **Flutter** e integração com **Firebase**.  
+Ele permite que os usuários criem, editem, organizem e sincronizem suas tarefas com facilidade, tanto em dispositivos móveis quanto na web.
+
+> ✅ A versão web está disponível em: [https://flutter-easytasks.vercel.app](https://flutter-easytasks.vercel.app)
+
+---
+
+## 🌟 Destaques
+
+- ✅ Autenticação de usuários com Firebase Auth  
+- ☁️ Armazenamento em nuvem com Cloud Firestore  
+- 🧠 Arquitetura baseada em MVC (Model-View-Controller)  
+- 📱 Responsividade completa (mobile, tablet e web)  
+- 🚀 Deploy web feito com Vercel  
+- ✨ Clean Code e separação de responsabilidades
+
+---
+
+## ✨ Funcionalidades
+
+- 📋 Criação e organização de tarefas por listas  
+- 🎯 Prioridades e status por tarefa  
+- 🗑️ Exclusão, edição e conclusão de tarefas  
+- 🔄 Sincronização em tempo real com Firestore  
+- 🌐 Login com autenticação segura (Firebase)  
+- 🎨 Interface moderna com Material Design 3  
+- 💡 Salvamento automático de alterações
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
-- **Flutter 3.19** - Framework multiplataforma.
-- **Dart 3.3** - Linguagem de programação.
-- **Firebase Auth & Firestore** - Autenticação e banco de dados em nuvem com suporte offline.
-- **Material Design 3** - Design system moderno.
+### Core
+- **Flutter 3.19.5**
+- **Dart 3.3.0**
+- **Firebase Auth**
+- **Cloud Firestore**
+
+### Arquitetura e Boas Práticas
+- MVC (Model-View-Controller)
+- Clean Code
+- Modularização
+
+### Plataforma
+- Flutter Web
+- Vercel (Deploy da versão web)
 
 ---
 
-## 🚀 Como Executar o Projeto
+## 📷 Screenshots
 
-### Download Direto
-
-Você pode baixar a última versão do APK diretamente através do link abaixo:
-
-[![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android)](releases/download/v1.0.0/easytasks.apk)
-
-> **Nota**: Para instalar o APK, você precisará permitir a instalação de fontes desconhecidas nas configurações do seu Android.
-
----
-
-## 📂 Estrutura do Projeto
-
-```plaintext
-lib/
-├── main.dart                # Ponto de entrada do aplicativo
-├── components/              # Componentes reutilizáveis
-├── models/                  # Modelos de dados (Task)
-├── screens/                 # Telas do aplicativo
-├── services/                # Serviços para manipulação de dados
-├── utils/                   # Temas e utilitários
-└── widgets/                 # Widgets reutilizáveis
-```
-
----
-
-## 🖼️ Screenshots
-
-<p align="center"> 
-<img src="screenshots/main1.png" width="300" alt="Tela Principal"> 
-<img src="screenshots/main2.png" width="300" alt="Tela Principal da Lista"> 
-<img src="screenshots/new_task.png" width="300" alt="Adicionar Tarefa"> 
-<img src="screenshots/edit_task.png" width="300" alt="Editar Tarefa"> 
-<img src="screenshots/delete_task.png" width="300" alt="Excluir Tarefa"> 
-<img src="screenshots/rename_task.png" width="300" alt="Renomear Tarefa"> 
-</p>     
+<div align="center">
+<table>
+  <tr>
+    <td><img src="screenshots/lists1.png" width="200" alt="Menu de Listas"/></td>
+    <td><img src="screenshots/lists2.png" width="200" alt="Gerenciar Listas"/></td>
+    <td><img src="screenshots/main1.png" width="200" alt="Tela Principal"/></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/main2.png" width="200" alt="Lista de Tarefas"/></td>
+    <td><img src="screenshots/new_task.png" width="200" alt="Nova Tarefa"/></td>
+    <td><img src="screenshots/edit_task.png" width="200" alt="Editar Tarefa"/></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/delete_task.png" width="200" alt="Excluir Tarefa"/></td>
+    <td><img src="screenshots/rename_task.png" width="200" alt="Renomear Tarefa"/></td>
+  </tr>
+</table>
+</div>
 
 ---
 
